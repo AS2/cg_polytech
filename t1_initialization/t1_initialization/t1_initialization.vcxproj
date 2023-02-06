@@ -144,8 +144,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="renderer.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
