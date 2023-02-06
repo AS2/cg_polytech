@@ -19,6 +19,11 @@
 
 #include <ctime>
 
+#define __CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 using namespace DirectX;
 
 //--------------------------------------------------------------------------------------
@@ -63,6 +68,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
   if (FAILED(InitWindow(hInstance, nCmdShow)))
     return 0;
 
+  
   if (FAILED(InitDevice()))
   {
     CleanupDevice();
@@ -70,7 +76,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
   }
 
   init_time = clock();
-
+  
   // Main message loop
   MSG msg = { 0 };
   while (WM_QUIT != msg.message)
@@ -82,12 +88,15 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     }
     else
     {
+
       Render();
     }
   }
 
   CleanupDevice();
 
+
+  _CrtDumpMemoryLeaks();
   return (int)msg.wParam;
 }
 
@@ -119,7 +128,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
   RECT rc = { 0, 0, 1280, 720 };
   AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
   g_hWnd = CreateWindow(L"TutorialWindowClass", L"Sachuk Aleksander Sergeevich, 5030102/90201",
-    WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+    WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX,
     CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
     nullptr);
   if (!g_hWnd)
