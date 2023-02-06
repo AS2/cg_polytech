@@ -221,8 +221,8 @@ void Renderer::ResizeWindow(const HWND& g_hWnd) {
     UINT height = rc.bottom - rc.top;
 
     D3D11_VIEWPORT vp;
-    vp.Width = width;
-    vp.Height = height;
+    vp.Width = (FLOAT)width;
+    vp.Height = (FLOAT)height;
     vp.MinDepth = 0.0f;
     vp.MaxDepth = 1.0f;
     vp.TopLeftX = 0;
