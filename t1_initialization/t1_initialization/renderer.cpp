@@ -96,7 +96,8 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
     sd.SampleDesc.Count = 1;
     sd.SampleDesc.Quality = 0;
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    sd.BufferCount = 1;
+    sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+    sd.BufferCount = 2;
 
     hr = dxgiFactory2->CreateSwapChainForHwnd(g_pd3dDevice, g_hWnd, &sd, nullptr, nullptr, &g_pSwapChain1);
     if (SUCCEEDED(hr))
@@ -111,7 +112,7 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
     // DirectX 11.0 systems
     DXGI_SWAP_CHAIN_DESC sd;
     ZeroMemory(&sd, sizeof(sd));
-    sd.BufferCount = 1;
+    sd.BufferCount = 2;
     sd.BufferDesc.Width = width;
     sd.BufferDesc.Height = height;
     sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -121,6 +122,7 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
     sd.OutputWindow = g_hWnd;
     sd.SampleDesc.Count = 1;
     sd.SampleDesc.Quality = 0;
+    sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
     sd.Windowed = TRUE;
 
     hr = dxgiFactory->CreateSwapChain(g_pd3dDevice, &sd, &g_pSwapChain);
@@ -205,11 +207,10 @@ void Renderer::ResizeWindow(const HWND& g_hWnd) {
     ID3D11Texture2D* pBuffer;
     hr = g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
       (void**)&pBuffer);
-    // Perform error handling here!
-
+    
     hr = g_pd3dDevice->CreateRenderTargetView(pBuffer, NULL,
       &g_pRenderTargetView);
-    // Perform error handling here!
+    
     pBuffer->Release();
 
     g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, NULL);

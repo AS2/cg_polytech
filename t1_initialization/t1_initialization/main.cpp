@@ -82,10 +82,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     }
-    else
-    {
-      Renderer::GetInstance().Render();
-    }
+    Renderer::GetInstance().Render();
   }
 
   Renderer::GetInstance().CleanupDevice();
@@ -106,6 +103,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     hdc = BeginPaint(hWnd, &ps);
     EndPaint(hWnd, &ps);
     break;
+
+  
+  case WM_GETMINMAXINFO:
+  {
+    LPMINMAXINFO lpMMI = (LPMINMAXINFO)lParam;
+    lpMMI->ptMinTrackSize.x = 256;
+    lpMMI->ptMinTrackSize.y = 256;
+    break;
+  }
 
   case WM_DESTROY:
     PostQuitMessage(0);
