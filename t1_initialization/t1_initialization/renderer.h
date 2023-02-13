@@ -1,9 +1,19 @@
 #pragma once
 
 #include <d3d11_1.h>
+#include <d3dcompiler.h>
+#include <directxmath.h>
 #include <directxcolors.h>
 
 #include <ctime>
+
+
+struct SimpleVertex
+{
+  float x, y, z;
+  COLORREF color;
+};
+
 
 // Make renderer class
 class Renderer {
@@ -26,6 +36,8 @@ public:
   void ResizeWindow(const HWND& g_hWnd);
 
 private:
+  HRESULT CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut);
+
   // Private constructor (for singleton)
   Renderer() = default;
 
@@ -40,6 +52,15 @@ private:
   IDXGISwapChain1*        g_pSwapChain1 = nullptr;
   ID3D11RenderTargetView* g_pRenderTargetView = nullptr;
 
+  ID3D11VertexShader* g_pVertexShader = nullptr;
+  ID3D11PixelShader* g_pPixelShader = nullptr;
+  ID3D11InputLayout* g_pVertexLayout = nullptr;
+  ID3D11Buffer* g_pVertexBuffer = nullptr;
+  ID3D11Buffer* g_pIndexBuffer = nullptr;
+
   // initialization clock
   std::clock_t init_time;
+
+  // window sizes
+  UINT wWidth = 1280, wHeight = 720;
 };
