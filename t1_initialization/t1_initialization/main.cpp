@@ -1,14 +1,12 @@
 #include <windows.h>
+#include <xstring>
 
-#include "resource.h"
+#include "resource1.h"
 #include "renderer.h"
 
 
-// Memory leaking cheking
-#define __CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
-#define new DEBUG_NEW
+#define MAX_LOADSTRING 300
+WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 
 
 // Global Variables
@@ -31,12 +29,12 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
   wcex.cbClsExtra = 0;
   wcex.cbWndExtra = 0;
   wcex.hInstance = hInstance;
-  wcex.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_T1);
+  wcex.hIcon = nullptr;
+  wcex.hIconSm = nullptr;
   wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
   wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
   wcex.lpszMenuName = nullptr;
   wcex.lpszClassName = L"WindowClass";
-  wcex.hIconSm = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_T1);
   if (!RegisterClassEx(&wcex))
     return E_FAIL;
 
@@ -67,6 +65,21 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     return 0;
 
   
+  LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+
+  
+  // Fix working folder
+  std::wstring dir;
+  dir.resize(MAX_LOADSTRING + 1);
+  GetCurrentDirectory(MAX_LOADSTRING + 1, &dir[0]);
+  size_t configPos = dir.find(L"x64");
+  if (configPos != std::wstring::npos)
+  {
+    dir.resize(configPos);
+    dir += szTitle;
+    SetCurrentDirectory(dir.c_str());
+  }
+  
   if (FAILED(Renderer::GetInstance().InitDevice(g_hWnd)))
   {
     Renderer::GetInstance().CleanupDevice();
@@ -87,7 +100,6 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
   Renderer::GetInstance().CleanupDevice();
 
-  _CrtDumpMemoryLeaks();
   return (int)msg.wParam;
 }
 
