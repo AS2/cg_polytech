@@ -349,6 +349,7 @@ void Renderer::Render() {
 void Renderer::CleanupDevice() {
   if (g_pImmediateContext) g_pImmediateContext->ClearState();
 
+  if (g_pIndexBuffer) g_pIndexBuffer->Release();
   if (g_pVertexBuffer) g_pVertexBuffer->Release();
   if (g_pVertexLayout) g_pVertexLayout->Release();
   if (g_pVertexShader) g_pVertexShader->Release();
