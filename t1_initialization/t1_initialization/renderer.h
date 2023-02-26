@@ -4,8 +4,12 @@
 #include <d3dcompiler.h>
 #include <directxmath.h>
 #include <directxcolors.h>
+#include <directxmath.h>
 
 #include <ctime>
+
+#include "camera.h"
+#include "input.h"
 
 
 struct SimpleVertex
@@ -14,6 +18,13 @@ struct SimpleVertex
   COLORREF color;
 };
 
+struct WorldMatrixBuffer {
+  XMMATRIX worldMatrix;
+};
+
+struct SceneMatrixBuffer {
+  XMMATRIX viewProjectionMatrix;
+};
 
 // Make renderer class
 class Renderer {
@@ -23,8 +34,11 @@ public:
   Renderer(const Renderer&) = delete;
   Renderer(Renderer&&) = delete;
 
-  // Initialization device method
-  HRESULT InitDevice(const HWND& g_hWnd);
+  // Init Renderer method
+  HRESULT Init(const HWND& g_hWnd, const HINSTANCE& g_hInstance, UINT screenWidth, UINT screenHeight);
+
+  // Update frame method
+  bool Frame();
 
   // Scene render method
   void Render();
@@ -36,7 +50,12 @@ public:
   void ResizeWindow(const HWND& g_hWnd);
 
 private:
+  // Initialization device method
+  HRESULT InitDevice(const HWND& g_hWnd);
+
   HRESULT CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut);
+
+  void HandleInput();
 
   // Private constructor (for singleton)
   Renderer() = default;
@@ -55,12 +74,20 @@ private:
   ID3D11VertexShader* g_pVertexShader = nullptr;
   ID3D11PixelShader* g_pPixelShader = nullptr;
   ID3D11InputLayout* g_pVertexLayout = nullptr;
+
   ID3D11Buffer* g_pVertexBuffer = nullptr;
   ID3D11Buffer* g_pIndexBuffer = nullptr;
+  ID3D11Buffer* g_pWorldMatrixBuffer = nullptr;
+  ID3D11Buffer* g_pSceneMatrixBuffer = nullptr;
+  ID3D11RasterizerState* g_pRasterizerState = nullptr;
 
   // initialization clock
   std::clock_t init_time;
 
-  // window sizes
-  UINT wWidth = 1280, wHeight = 720;
+  // initialization other thinngs (camera, input devices, etc.)
+  Camera camera;
+  Input input;
+
+  // Velocity of world matrix rotation
+  float angle_velocity = 3.1415926f;
 };
