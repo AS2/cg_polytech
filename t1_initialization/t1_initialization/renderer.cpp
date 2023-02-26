@@ -250,11 +250,11 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
   SimpleVertex vertices[] = {
        { -1.0f, 1.0f, -1.0f, RGB(0, 0, 255) },
        { 1.0f, 1.0f, -1.0f, RGB(0, 255, 0) },
-       { 1.0f, 1.0f, 1.0f, RGB(0, 255, 255) },
+       { 1.0f, 1.0f, 1.0f, RGB(255, 255, 255) },
        { -1.0f, 1.0f, 1.0f, RGB(255, 0, 0) },
        { -1.0f, -1.0f, -1.0f, RGB(255, 0, 255) },
        { 1.0f, -1.0f, -1.0f, RGB(255, 255, 0) },
-       { 1.0f, -1.0f, 1.0f, RGB(255, 255, 255) },
+       { 1.0f, -1.0f, 1.0f, RGB(0, 255, 255) },
        { -1.0f, -1.0f, 1.0f, RGB(0, 0, 0) }
   };
   USHORT indices[] = {
@@ -366,40 +366,59 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
   if (FAILED(hr))
     return hr;
 
-  // Init camera
-  camera = new Camera();
-  hr = camera->Init();
+  return S_OK;
+}
+
+HRESULT Renderer::Init(const HWND& g_hWnd, const HINSTANCE& g_hInstance, UINT screenWidth, UINT screenHeight) {
+  HRESULT hr = input.InitInputs(g_hInstance, g_hWnd, screenWidth, screenHeight);
+  if (FAILED(hr))
+    return hr;
+
+  hr = camera.InitCamera();
+  if (FAILED(hr))
+    return hr;
+
+  hr = InitDevice(g_hWnd);
   if (FAILED(hr))
     return hr;
 
   return S_OK;
 }
 
+void Renderer::HandleInput() {
+  // handle camera rotations
+  XMFLOAT3 mouseMove = input.IsMouseUsed();
+  camera.Move(mouseMove.x, mouseMove.y, mouseMove.z);
+
+  // handle world matrix rotation
+  //float sign = input.IsPlusMinusPressed();
+  //angle_velocity += sign * 0.0001f;
+  //angle_velocity = min(max(angle_velocity, 0.f), 30.f);
+}
+
 // Update frame method
 bool Renderer::Frame() {
-  HRESULT hr = S_OK;
+  // update inputs
+  input.Frame();
+  
+  // update camera
+  HandleInput();
+  camera.Frame();
 
-  camera->Frame();
-
-  // Update our time
+  // Update world matrix angle
   auto duration = (1.0 * clock() - init_time) / CLOCKS_PER_SEC;
 
-  // Update world matrix
   WorldMatrixBuffer worldMatrixBuffer;
-
-  worldMatrixBuffer.worldMatrix = XMMatrixRotationY((float)duration);
-
+  worldMatrixBuffer.worldMatrix = XMMatrixRotationY((float)duration * angle_velocity);
   g_pImmediateContext->UpdateSubresource(g_pWorldMatrixBuffer, 0, nullptr, &worldMatrixBuffer, 0, 0);
 
   // Get the view matrix
   XMMATRIX mView;
-  camera->GetBaseViewMatrix(mView);
-
+  camera.GetBaseViewMatrix(mView);
   // Get the projection matrix
-  XMMATRIX mProjection = XMMatrixPerspectiveFovLH(XM_PIDIV2, wWidth / (FLOAT)wHeight, 0.01f, 100.0f);
-
+  XMMATRIX mProjection = XMMatrixPerspectiveFovLH(XM_PIDIV2, (FLOAT)input.GetWidth() / (FLOAT)input.GetHeight(), 0.01f, 100.0f);
   D3D11_MAPPED_SUBRESOURCE subresource;
-  hr = g_pImmediateContext->Map(g_pSceneMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
+  HRESULT hr = g_pImmediateContext->Map(g_pSceneMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
   if (FAILED(hr))
     return FAILED(hr);
 
@@ -429,8 +448,8 @@ void Renderer::Render() {
   D3D11_VIEWPORT viewport;
   viewport.TopLeftX = 0;
   viewport.TopLeftY = 0;
-  viewport.Width = (FLOAT)wWidth;
-  viewport.Height = (FLOAT)wHeight;
+  viewport.Width = (FLOAT)input.GetWidth();
+  viewport.Height = (FLOAT)input.GetHeight();
   viewport.MinDepth = 0.0f;
   viewport.MaxDepth = 1.0f;
   g_pImmediateContext->RSSetViewports(1, &viewport);
@@ -438,8 +457,8 @@ void Renderer::Render() {
   D3D11_RECT rect;
   rect.left = 0;
   rect.top = 0;
-  rect.right = wWidth;
-  rect.bottom = wHeight;
+  rect.right = input.GetWidth();
+  rect.bottom = input.GetHeight();
   g_pImmediateContext->RSSetScissorRects(1, &rect);
 
   g_pImmediateContext->RSSetState(g_pRasterizerState);
@@ -462,6 +481,9 @@ void Renderer::Render() {
 }
 
 void Renderer::CleanupDevice() {
+  camera.Realese();
+  input.Realese();
+
   if (g_pImmediateContext) g_pImmediateContext->ClearState();
 
   if (g_pRasterizerState) g_pRasterizerState->Release();
@@ -521,7 +543,6 @@ void Renderer::ResizeWindow(const HWND& g_hWnd) {
     vp.TopLeftY = 0;
     g_pImmediateContext->RSSetViewports(1, &vp);
 
-    wWidth = width;
-    wHeight = height;
+    input.Resize(width, height);
   }
 }

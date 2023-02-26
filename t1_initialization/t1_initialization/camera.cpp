@@ -1,7 +1,7 @@
 #include "camera.h"
 
 // Initialization camera method
-HRESULT Camera::Init() {
+HRESULT Camera::InitCamera() {
   phi = -XM_PIDIV4;
   theta = XM_PIDIV4;
   distanceToPoint = 4.0f;
@@ -35,6 +35,16 @@ void Camera::Frame() {
     DirectX::XMVectorSet(pointOfInterest.x, pointOfInterest.y, pointOfInterest.z, 0.0f),
     DirectX::XMVectorSet(up.x, up.y, up.z, 0.0f)
   );
+}
+
+void Camera::Move(float dx, float dy, float wheel) {
+  phi -= dx / MOVEMENT_DOWNSHIFTING;
+
+  theta += dy / MOVEMENT_DOWNSHIFTING;
+  theta = min(max(theta, -XM_PIDIV2), XM_PIDIV2);
+
+  distanceToPoint -= wheel / MOVEMENT_DOWNSHIFTING;
+  distanceToPoint = max(distanceToPoint, 1.0f);
 }
 
 // Get view matrix method
