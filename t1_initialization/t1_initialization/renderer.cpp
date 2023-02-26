@@ -247,14 +247,34 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
   init_time = clock();
 
   // Create vertex buffer
-  SimpleVertex vertices[] =
-  {
-    {-0.5f, -0.5f, 0.0f, RGB(255, 0, 0)},
-    { 0.5f, -0.5f, 0.0f, RGB(0, 255, 0)},
-    { 0.0f,  0.5f, 0.0f, RGB(0, 0, 255)}
+  SimpleVertex vertices[] = {
+       { -1.0f, 1.0f, -1.0f, RGB(0, 0, 255) },
+       { 1.0f, 1.0f, -1.0f, RGB(0, 255, 0) },
+       { 1.0f, 1.0f, 1.0f, RGB(0, 255, 255) },
+       { -1.0f, 1.0f, 1.0f, RGB(255, 0, 0) },
+       { -1.0f, -1.0f, -1.0f, RGB(255, 0, 255) },
+       { 1.0f, -1.0f, -1.0f, RGB(255, 255, 0) },
+       { 1.0f, -1.0f, 1.0f, RGB(255, 255, 255) },
+       { -1.0f, -1.0f, 1.0f, RGB(0, 0, 0) }
   };
   USHORT indices[] = {
-        0, 2, 1
+        3,1,0,
+        2,1,3,
+
+        0,5,4,
+        1,5,0,
+
+        3,4,7,
+        0,4,3,
+
+        1,6,5,
+        2,6,1,
+
+        2,7,6,
+        3,7,2,
+
+        6,4,5,
+        7,4,6,
   };
 
   D3D11_BUFFER_DESC bd;
@@ -296,7 +316,98 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
   if (FAILED(hr))
     return hr;
 
+  // Set constant buffers
+  D3D11_BUFFER_DESC descWMB = {};
+  descWMB.ByteWidth = sizeof(WorldMatrixBuffer);
+  descWMB.Usage = D3D11_USAGE_DEFAULT;
+  descWMB.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+  descWMB.CPUAccessFlags = 0;
+  descWMB.MiscFlags = 0;
+  descWMB.StructureByteStride = 0;
+
+  WorldMatrixBuffer worldMatrixBuffer;
+  worldMatrixBuffer.worldMatrix = DirectX::XMMatrixIdentity();
+
+  D3D11_SUBRESOURCE_DATA data;
+  data.pSysMem = &worldMatrixBuffer;
+  data.SysMemPitch = sizeof(worldMatrixBuffer);
+  data.SysMemSlicePitch = 0;
+
+  hr = g_pd3dDevice->CreateBuffer(&descWMB, &data, &g_pWorldMatrixBuffer);
+  if (FAILED(hr))
+    return hr;
+
+  D3D11_BUFFER_DESC descSMB = {};
+  descSMB.ByteWidth = sizeof(SceneMatrixBuffer);
+  descSMB.Usage = D3D11_USAGE_DYNAMIC;
+  descSMB.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+  descSMB.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+  descSMB.MiscFlags = 0;
+  descSMB.StructureByteStride = 0;
+
+  hr = g_pd3dDevice->CreateBuffer(&descSMB, nullptr, &g_pSceneMatrixBuffer);
+  if (FAILED(hr))
+    return hr;
+
+  // Set rastrizer state
+  D3D11_RASTERIZER_DESC descRastr = {};
+  descRastr.AntialiasedLineEnable = false;
+  descRastr.FillMode = D3D11_FILL_SOLID;
+  descRastr.CullMode = D3D11_CULL_BACK;
+  descRastr.DepthBias = 0;
+  descRastr.DepthBiasClamp = 0.0f;
+  descRastr.FrontCounterClockwise = false;
+  descRastr.DepthClipEnable = true;
+  descRastr.ScissorEnable = false;
+  descRastr.MultisampleEnable = false;
+  descRastr.SlopeScaledDepthBias = 0.0f;
+
+  hr = g_pd3dDevice->CreateRasterizerState(&descRastr, &g_pRasterizerState);
+  if (FAILED(hr))
+    return hr;
+
+  // Init camera
+  camera = new Camera();
+  hr = camera->Init();
+  if (FAILED(hr))
+    return hr;
+
   return S_OK;
+}
+
+// Update frame method
+bool Renderer::Frame() {
+  HRESULT hr = S_OK;
+
+  camera->Frame();
+
+  // Update our time
+  auto duration = (1.0 * clock() - init_time) / CLOCKS_PER_SEC;
+
+  // Update world matrix
+  WorldMatrixBuffer worldMatrixBuffer;
+
+  worldMatrixBuffer.worldMatrix = XMMatrixRotationY((float)duration);
+
+  g_pImmediateContext->UpdateSubresource(g_pWorldMatrixBuffer, 0, nullptr, &worldMatrixBuffer, 0, 0);
+
+  // Get the view matrix
+  XMMATRIX mView;
+  camera->GetBaseViewMatrix(mView);
+
+  // Get the projection matrix
+  XMMATRIX mProjection = XMMatrixPerspectiveFovLH(XM_PIDIV2, wWidth / (FLOAT)wHeight, 0.01f, 100.0f);
+
+  D3D11_MAPPED_SUBRESOURCE subresource;
+  hr = g_pImmediateContext->Map(g_pSceneMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
+  if (FAILED(hr))
+    return FAILED(hr);
+
+  SceneMatrixBuffer& sceneBuffer = *reinterpret_cast<SceneMatrixBuffer*>(subresource.pData);
+  sceneBuffer.viewProjectionMatrix = XMMatrixMultiply(mView, mProjection);
+  g_pImmediateContext->Unmap(g_pSceneMatrixBuffer, 0);
+
+  return SUCCEEDED(hr);
 }
 
 void Renderer::Render() {
@@ -331,7 +442,9 @@ void Renderer::Render() {
   rect.bottom = wHeight;
   g_pImmediateContext->RSSetScissorRects(1, &rect);
 
-  // Render a triangle
+  g_pImmediateContext->RSSetState(g_pRasterizerState);
+
+  // Render a cube
   g_pImmediateContext->IASetIndexBuffer(g_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
   ID3D11Buffer* vertexBuffers[] = { g_pVertexBuffer };
   UINT strides[] = { 16 };
@@ -340,8 +453,10 @@ void Renderer::Render() {
   g_pImmediateContext->IASetInputLayout(g_pVertexLayout);
   g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   g_pImmediateContext->VSSetShader(g_pVertexShader, nullptr, 0);
+  g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer);
+  g_pImmediateContext->VSSetConstantBuffers(1, 1, &g_pSceneMatrixBuffer);
   g_pImmediateContext->PSSetShader(g_pPixelShader, nullptr, 0);
-  g_pImmediateContext->DrawIndexed(3, 0, 0);
+  g_pImmediateContext->DrawIndexed(36, 0, 0);
 
   g_pSwapChain->Present(0, 0);
 }
@@ -349,6 +464,9 @@ void Renderer::Render() {
 void Renderer::CleanupDevice() {
   if (g_pImmediateContext) g_pImmediateContext->ClearState();
 
+  if (g_pRasterizerState) g_pRasterizerState->Release();
+  if (g_pWorldMatrixBuffer) g_pWorldMatrixBuffer->Release();
+  if (g_pSceneMatrixBuffer) g_pSceneMatrixBuffer->Release();
   if (g_pIndexBuffer) g_pIndexBuffer->Release();
   if (g_pVertexBuffer) g_pVertexBuffer->Release();
   if (g_pVertexLayout) g_pVertexLayout->Release();

@@ -24,7 +24,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
   // Register class
   WNDCLASSEX wcex;
   wcex.cbSize = sizeof(WNDCLASSEX);
-  wcex.style = CS_HREDRAW | CS_VREDRAW;
+  wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
   wcex.lpfnWndProc = WndProc;
   wcex.cbClsExtra = 0;
   wcex.cbWndExtra = 0;
@@ -42,7 +42,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
   g_hInst = hInstance;
   RECT rc = { 0, 0, 1280, 720 };
   AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-  g_hWnd = CreateWindow(L"WindowClass", L"T2, Sachuk Aleksander Sergeevich, 5030102/90201",
+  g_hWnd = CreateWindow(L"WindowClass", L"T3, Sachuk Aleksander Sergeevich, 5030102/90201",
     WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX,
     CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
     nullptr);
@@ -50,6 +50,8 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
     return E_FAIL;
 
   ShowWindow(g_hWnd, nCmdShow);
+  SetForegroundWindow(g_hWnd);
+  SetFocus(g_hWnd);
 
   return S_OK;
 }
@@ -95,7 +97,8 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     }
-    Renderer::GetInstance().Render();
+    if (Renderer::GetInstance().Frame())
+      Renderer::GetInstance().Render();
   }
 
   Renderer::GetInstance().CleanupDevice();

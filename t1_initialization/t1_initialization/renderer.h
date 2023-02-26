@@ -4,8 +4,11 @@
 #include <d3dcompiler.h>
 #include <directxmath.h>
 #include <directxcolors.h>
+#include <directxmath.h>
 
 #include <ctime>
+
+#include "camera.h"
 
 
 struct SimpleVertex
@@ -14,6 +17,13 @@ struct SimpleVertex
   COLORREF color;
 };
 
+struct WorldMatrixBuffer {
+  XMMATRIX worldMatrix;
+};
+
+struct SceneMatrixBuffer {
+  XMMATRIX viewProjectionMatrix;
+};
 
 // Make renderer class
 class Renderer {
@@ -25,6 +35,9 @@ public:
 
   // Initialization device method
   HRESULT InitDevice(const HWND& g_hWnd);
+
+  // Update frame method
+  bool Frame();
 
   // Scene render method
   void Render();
@@ -55,11 +68,16 @@ private:
   ID3D11VertexShader* g_pVertexShader = nullptr;
   ID3D11PixelShader* g_pPixelShader = nullptr;
   ID3D11InputLayout* g_pVertexLayout = nullptr;
+
   ID3D11Buffer* g_pVertexBuffer = nullptr;
   ID3D11Buffer* g_pIndexBuffer = nullptr;
+  ID3D11Buffer* g_pWorldMatrixBuffer = nullptr;
+  ID3D11Buffer* g_pSceneMatrixBuffer = nullptr;
+  ID3D11RasterizerState* g_pRasterizerState = nullptr;
 
   // initialization clock
   std::clock_t init_time;
+  Camera* camera = nullptr;
 
   // window sizes
   UINT wWidth = 1280, wHeight = 720;
