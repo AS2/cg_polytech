@@ -10,12 +10,13 @@
 
 #include "camera.h"
 #include "input.h"
+#include "texture.h"
 
 
 struct SimpleVertex
 {
-  float x, y, z;
-  COLORREF color;
+  float x, y, z;      // positional coords
+  float u, v;         // texture coords
 };
 
 struct WorldMatrixBuffer {
@@ -80,6 +81,7 @@ private:
   ID3D11Buffer* g_pWorldMatrixBuffer = nullptr;
   ID3D11Buffer* g_pSceneMatrixBuffer = nullptr;
   ID3D11RasterizerState* g_pRasterizerState = nullptr;
+  ID3D11SamplerState* g_pSamplerState = nullptr;
 
   // initialization clock
   std::clock_t init_time;
@@ -87,6 +89,7 @@ private:
   // initialization other thinngs (camera, input devices, etc.)
   Camera camera;
   Input input;
+  Texture txt;
 
   // Velocity of world matrix rotation
   float angle_velocity = 3.1415926f;

@@ -214,7 +214,7 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
   D3D11_INPUT_ELEMENT_DESC layout[] =
   {
       {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-      {"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+      {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
   };
   UINT numElements = ARRAYSIZE(layout);
 
@@ -246,35 +246,49 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
 
   init_time = clock();
 
+  // Load text
+  hr = txt.Init(g_pd3dDevice, g_pImmediateContext, L"./bin/hah.dds");
+
   // Create vertex buffer
   SimpleVertex vertices[] = {
-       { -1.0f, 1.0f, -1.0f, RGB(0, 0, 255) },
-       { 1.0f, 1.0f, -1.0f, RGB(0, 255, 0) },
-       { 1.0f, 1.0f, 1.0f, RGB(255, 255, 255) },
-       { -1.0f, 1.0f, 1.0f, RGB(255, 0, 0) },
-       { -1.0f, -1.0f, -1.0f, RGB(255, 0, 255) },
-       { 1.0f, -1.0f, -1.0f, RGB(255, 255, 0) },
-       { 1.0f, -1.0f, 1.0f, RGB(0, 255, 255) },
-       { -1.0f, -1.0f, 1.0f, RGB(0, 0, 0) }
+    {-0.5, -0.5,  0.5, 0, 1},
+    { 0.5, -0.5,  0.5, 1, 1},
+    { 0.5, -0.5, -0.5, 1, 0},
+    {-0.5, -0.5, -0.5, 0, 0},
+     
+    {-0.5,  0.5, -0.5, 1, 1},
+    { 0.5,  0.5, -0.5, 0, 1},
+    { 0.5,  0.5,  0.5, 0, 0},
+    {-0.5,  0.5,  0.5, 1, 0},
+     
+    { 0.5, -0.5, -0.5, 0, 1},
+    { 0.5, -0.5,  0.5, 1, 1},
+    { 0.5,  0.5,  0.5, 1, 0},
+    { 0.5,  0.5, -0.5, 0, 0},
+     
+    {-0.5, -0.5,  0.5, 0, 1},
+    {-0.5, -0.5, -0.5, 1, 1},
+    {-0.5,  0.5, -0.5, 1, 0},
+    {-0.5,  0.5,  0.5, 0, 0},
+    
+    { 0.5, -0.5,  0.5, 1, 1},
+    {-0.5, -0.5,  0.5, 0, 1},
+    {-0.5,  0.5,  0.5, 0, 0},
+    { 0.5,  0.5,  0.5, 1, 0},
+     
+    {-0.5, -0.5, -0.5, 1, 1},
+    { 0.5, -0.5, -0.5, 0, 1},
+    { 0.5,  0.5, -0.5, 0, 0},
+    {-0.5,  0.5, -0.5, 1, 0}
   };
+
   USHORT indices[] = {
-        3,1,0,
-        2,1,3,
-
-        0,5,4,
-        1,5,0,
-
-        3,4,7,
-        0,4,3,
-
-        1,6,5,
-        2,6,1,
-
-        2,7,6,
-        3,7,2,
-
-        6,4,5,
-        7,4,6,
+        0, 2, 1, 0, 3, 2,
+        4, 6, 5, 4, 7, 6,
+        8, 10, 9, 8, 11, 10,
+        12, 14, 13, 12, 15, 14,
+        16, 18, 17, 16, 19, 18,
+        20, 22, 21, 20, 23, 22
   };
 
   D3D11_BUFFER_DESC bd;
@@ -366,6 +380,26 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
   if (FAILED(hr))
     return hr;
 
+  // Set sampler state
+  D3D11_SAMPLER_DESC descSmplr = {};
+  descSmplr.Filter = D3D11_FILTER_ANISOTROPIC;
+  descSmplr.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+  descSmplr.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+  descSmplr.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+  descSmplr.MinLOD = -D3D11_FLOAT32_MAX;
+  descSmplr.MaxLOD = D3D11_FLOAT32_MAX;
+  descSmplr.MipLODBias = 0.0f;
+  descSmplr.MaxAnisotropy = 16;
+  descSmplr.ComparisonFunc = D3D11_COMPARISON_NEVER;
+  descSmplr.BorderColor[0] = 
+    descSmplr.BorderColor[1] = 
+    descSmplr.BorderColor[2] = 
+    descSmplr.BorderColor[3] = 1.0f;
+
+  hr = g_pd3dDevice->CreateSamplerState(&descSmplr, &g_pSamplerState);
+  if (FAILED(hr))
+    return hr;
+
   return S_OK;
 }
 
@@ -409,7 +443,9 @@ bool Renderer::Frame() {
   auto duration = (1.0 * clock() - init_time) / CLOCKS_PER_SEC;
 
   WorldMatrixBuffer worldMatrixBuffer;
-  worldMatrixBuffer.worldMatrix = XMMatrixRotationY((float)duration * angle_velocity);
+  worldMatrixBuffer.worldMatrix = XMMatrixRotationY((float)duration * angle_velocity) *
+    XMMatrixRotationZ((float)(sin(duration * angle_velocity * 0.30) * -0.5)) * 
+    XMMatrixTranslation((float)(sin(duration * 0.75) * 2.5), 0, 0);// (float)(cos(duration) * 3.0));
   g_pImmediateContext->UpdateSubresource(g_pWorldMatrixBuffer, 0, nullptr, &worldMatrixBuffer, 0, 0);
 
   // Get the view matrix
@@ -463,10 +499,16 @@ void Renderer::Render() {
 
   g_pImmediateContext->RSSetState(g_pRasterizerState);
 
+  ID3D11SamplerState* samplers[] = { g_pSamplerState };
+  g_pImmediateContext->PSSetSamplers(0, 1, samplers);
+
+  ID3D11ShaderResourceView* resources[] = { txt.GetTexture() };
+  g_pImmediateContext->PSSetShaderResources(0, 1, resources);
+
   // Render a cube
   g_pImmediateContext->IASetIndexBuffer(g_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
   ID3D11Buffer* vertexBuffers[] = { g_pVertexBuffer };
-  UINT strides[] = { 16 };
+  UINT strides[] = { 20 };
   UINT offsets[] = { 0 };
   g_pImmediateContext->IASetVertexBuffers(0, 1, vertexBuffers, strides, offsets);
   g_pImmediateContext->IASetInputLayout(g_pVertexLayout);
@@ -483,9 +525,11 @@ void Renderer::Render() {
 void Renderer::CleanupDevice() {
   camera.Realese();
   input.Realese();
+  txt.Release();
 
   if (g_pImmediateContext) g_pImmediateContext->ClearState();
 
+  if (g_pSamplerState) g_pSamplerState->Release();
   if (g_pRasterizerState) g_pRasterizerState->Release();
   if (g_pWorldMatrixBuffer) g_pWorldMatrixBuffer->Release();
   if (g_pSceneMatrixBuffer) g_pSceneMatrixBuffer->Release();

@@ -1,9 +1,9 @@
 #include <windows.h>
 #include <xstring>
+#include <mmsystem.h>
 
 #include "resource1.h"
 #include "renderer.h"
-
 
 #define START_W 1280
 #define START_H 720
@@ -84,14 +84,18 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     dir += szTitle;
     SetCurrentDirectory(dir.c_str());
   }
-  
+
+  //play secret sound
+  PlaySound(TEXT("./bin/songs/heh.wav"), NULL, SND_ASYNC);
+  getchar();
+
   // Init Device
   if (FAILED(Renderer::GetInstance().Init(g_hWnd, g_hInst, START_W, START_H)))
   {
     Renderer::GetInstance().CleanupDevice();
     return 0;
   }
-  
+
   // Main message loop
   MSG msg = { 0 };
   while (WM_QUIT != msg.message)

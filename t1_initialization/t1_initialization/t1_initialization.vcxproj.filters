@@ -25,6 +25,12 @@
     <Filter Include="Input">
       <UniqueIdentifier>{15c5c2b9-1d91-44eb-8e8e-20b01e5e90df}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Textures">
+      <UniqueIdentifier>{5c6e920f-4e26-4060-865d-cc137c1f7056}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Textures\DDSTextureLoader">
+      <UniqueIdentifier>{5487fb1c-0948-4f41-a019-f45a26738615}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -36,6 +42,12 @@
     </ClCompile>
     <ClCompile Include="input.cpp">
       <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="DDSTextureLoader.cpp">
+      <Filter>Textures\DDSTextureLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="texture.cpp">
+      <Filter>Textures</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -50,6 +62,12 @@
     </ClInclude>
     <ClInclude Include="input.h">
       <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="DDSTextureLoader.h">
+      <Filter>Textures\DDSTextureLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="texture.h">
+      <Filter>Textures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
