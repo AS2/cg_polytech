@@ -86,7 +86,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
   }
 
   //play secret sound
-  PlaySound(TEXT("./bin/songs/heh.wav"), NULL, SND_ASYNC);
+  PlaySound(TEXT("./src/songs/heh.wav"), NULL, SND_ASYNC);
   getchar();
 
   // Init Device
