@@ -247,7 +247,7 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
   init_time = clock();
 
   // Load text
-  hr = txt.Init(g_pd3dDevice, g_pImmediateContext, L"./bin/hah.dds");
+  hr = txt.Init(g_pd3dDevice, g_pImmediateContext, L"./src/hah.dds");
 
   // Create vertex buffer
   SimpleVertex vertices[] = {
