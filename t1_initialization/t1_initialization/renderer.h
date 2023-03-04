@@ -10,22 +10,9 @@
 #include "input.h"
 #include "texture.h"
 #include "timer.h"
+#include "scene.h"
 #include "skybox.h"
 
-
-struct SimpleVertex
-{
-  float x, y, z;      // positional coords
-  float u, v;         // texture coords
-};
-
-struct WorldMatrixBuffer {
-  XMMATRIX worldMatrix;
-};
-
-struct SceneMatrixBuffer {
-  XMMATRIX viewProjectionMatrix;
-};
 
 // Make renderer class
 class Renderer {
@@ -54,8 +41,6 @@ private:
   // Initialization device method
   HRESULT InitDevice(const HWND& g_hWnd);
 
-  HRESULT CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut);
-
   void HandleInput();
 
   // Private constructor (for singleton)
@@ -72,23 +57,10 @@ private:
   IDXGISwapChain1*        g_pSwapChain1 = nullptr;
   ID3D11RenderTargetView* g_pRenderTargetView = nullptr;
 
-  ID3D11VertexShader* g_pVertexShader = nullptr;
-  ID3D11PixelShader* g_pPixelShader = nullptr;
-  ID3D11InputLayout* g_pVertexLayout = nullptr;
-
-  ID3D11Buffer* g_pVertexBuffer = nullptr;
-  ID3D11Buffer* g_pIndexBuffer = nullptr;
-  ID3D11Buffer* g_pWorldMatrixBuffer = nullptr;
-  ID3D11Buffer* g_pSceneMatrixBuffer = nullptr;
-  ID3D11RasterizerState* g_pRasterizerState = nullptr;
-  ID3D11SamplerState* g_pSamplerState = nullptr;
-
   // initialization other thinngs (camera, input devices, etc.)
   Camera camera;
   Input input;
   Skybox sb;
+  Scene sc;
   Texture txt;
-
-  // Velocity of world matrix rotation
-  float angle_velocity = 3.1415926f;
 };

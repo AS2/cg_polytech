@@ -31,14 +31,20 @@
     <Filter Include="Textures\DDSTextureLoader">
       <UniqueIdentifier>{5487fb1c-0948-4f41-a019-f45a26738615}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\Skybox">
-      <UniqueIdentifier>{9fcf3e78-edd4-424f-8fce-e9084a398031}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Skybox">
       <UniqueIdentifier>{2bb4708b-5967-4fdc-85d7-7d5408d3fd45}</UniqueIdentifier>
     </Filter>
     <Filter Include="Timer">
       <UniqueIdentifier>{724f6772-b4ca-4a73-85bc-8e0cc0571dce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{9cfeebf5-3960-4805-a58e-fd943daeccbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\Shaders">
+      <UniqueIdentifier>{25f8e279-1f20-4f40-bcaf-0a753724ad3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Skybox\Shaders">
+      <UniqueIdentifier>{9fcf3e78-edd4-424f-8fce-e9084a398031}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -60,6 +66,9 @@
     </ClCompile>
     <ClCompile Include="skybox.cpp">
       <Filter>Skybox</Filter>
+    </ClCompile>
+    <ClCompile Include="scene.cpp">
+      <Filter>Scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -87,19 +96,22 @@
     <ClInclude Include="Timer.h">
       <Filter>Timer</Filter>
     </ClInclude>
+    <ClInclude Include="scene.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="t2_PS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="t2_VS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="skybox_PS.hlsl">
-      <Filter>Shaders\Skybox</Filter>
+      <Filter>Skybox\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="skybox_VS.hlsl">
-      <Filter>Shaders\Skybox</Filter>
+      <Filter>Skybox\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="t2_PS.hlsl">
+      <Filter>Scene\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="t2_VS.hlsl">
+      <Filter>Scene\Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
