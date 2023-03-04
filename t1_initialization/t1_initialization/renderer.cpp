@@ -244,7 +244,8 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
   if (FAILED(hr))
     return hr;
 
-  init_time = clock();
+  // Init timer
+  Timer::GetInstance().Init();
 
   // Load text
   hr = txt.Init(g_pd3dDevice, g_pImmediateContext, L"./src/hah.dds");
@@ -400,6 +401,8 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
   if (FAILED(hr))
     return hr;
 
+  sb.Init(g_pd3dDevice, g_pImmediateContext, width, height);
+
   return S_OK;
 }
 
@@ -440,12 +443,12 @@ bool Renderer::Frame() {
   camera.Frame();
 
   // Update world matrix angle
-  auto duration = (1.0 * clock() - init_time) / CLOCKS_PER_SEC;
+  auto duration = Timer::GetInstance().Clock();
 
   WorldMatrixBuffer worldMatrixBuffer;
   worldMatrixBuffer.worldMatrix = XMMatrixRotationY((float)duration * angle_velocity) *
-    XMMatrixRotationZ((float)(sin(duration * angle_velocity * 0.30) * -0.5)) * 
-    XMMatrixTranslation((float)(sin(duration * 0.75) * 2.5), 0, 0);// (float)(cos(duration) * 3.0));
+    XMMatrixRotationZ((float)(sin(duration * angle_velocity * 0.30) * 0.5)) * 
+    XMMatrixTranslation((float)(sin(duration) * 3.0), 0, 0);// (float)(cos(duration) * 3.0));
   g_pImmediateContext->UpdateSubresource(g_pWorldMatrixBuffer, 0, nullptr, &worldMatrixBuffer, 0, 0);
 
   // Get the view matrix
@@ -462,6 +465,9 @@ bool Renderer::Frame() {
   sceneBuffer.viewProjectionMatrix = XMMatrixMultiply(mView, mProjection);
   g_pImmediateContext->Unmap(g_pSceneMatrixBuffer, 0);
 
+  // Get the view matrix
+  sb.Frame(g_pImmediateContext, mView, mProjection, camera.GetPos());
+
   return SUCCEEDED(hr);
 }
 
@@ -472,7 +478,7 @@ void Renderer::Render() {
   g_pImmediateContext->OMSetRenderTargets(1, views, nullptr);
 
   // Just clear the backbuffer
-  auto duration = (1.0 * clock() - init_time) / CLOCKS_PER_SEC;
+  auto duration = Timer::GetInstance().Clock();
 
   float ClearColor[4] = {
     float(0.5 + 0.5 * sin(0.2 * duration)),
@@ -496,6 +502,8 @@ void Renderer::Render() {
   rect.right = input.GetWidth();
   rect.bottom = input.GetHeight();
   g_pImmediateContext->RSSetScissorRects(1, &rect);
+
+  sb.Render(g_pImmediateContext);
 
   g_pImmediateContext->RSSetState(g_pRasterizerState);
 
@@ -526,6 +534,7 @@ void Renderer::CleanupDevice() {
   camera.Realese();
   input.Realese();
   txt.Release();
+  sb.Realese();
 
   if (g_pImmediateContext) g_pImmediateContext->ClearState();
 
@@ -588,5 +597,6 @@ void Renderer::ResizeWindow(const HWND& g_hWnd) {
     g_pImmediateContext->RSSetViewports(1, &vp);
 
     input.Resize(width, height);
+    sb.Resize(width, height);
   }
 }

@@ -8,6 +8,8 @@
 class Texture {
 public:
   HRESULT Init(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const wchar_t* filename);
+  // TODO: make more params in Ex initializing version
+  HRESULT InitEx(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const wchar_t* filename);
   
   void Release();
 

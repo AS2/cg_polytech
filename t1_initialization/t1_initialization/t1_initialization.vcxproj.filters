@@ -31,6 +31,15 @@
     <Filter Include="Textures\DDSTextureLoader">
       <UniqueIdentifier>{5487fb1c-0948-4f41-a019-f45a26738615}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Skybox">
+      <UniqueIdentifier>{9fcf3e78-edd4-424f-8fce-e9084a398031}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Skybox">
+      <UniqueIdentifier>{2bb4708b-5967-4fdc-85d7-7d5408d3fd45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Timer">
+      <UniqueIdentifier>{724f6772-b4ca-4a73-85bc-8e0cc0571dce}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -48,6 +57,9 @@
     </ClCompile>
     <ClCompile Include="texture.cpp">
       <Filter>Textures</Filter>
+    </ClCompile>
+    <ClCompile Include="skybox.cpp">
+      <Filter>Skybox</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -69,6 +81,12 @@
     <ClInclude Include="texture.h">
       <Filter>Textures</Filter>
     </ClInclude>
+    <ClInclude Include="skybox.h">
+      <Filter>Skybox</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Timer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="t2_PS.hlsl">
@@ -76,6 +94,12 @@
     </FxCompile>
     <FxCompile Include="t2_VS.hlsl">
       <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="skybox_PS.hlsl">
+      <Filter>Shaders\Skybox</Filter>
+    </FxCompile>
+    <FxCompile Include="skybox_VS.hlsl">
+      <Filter>Shaders\Skybox</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

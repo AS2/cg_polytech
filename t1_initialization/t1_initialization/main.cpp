@@ -45,7 +45,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
   g_hInst = hInstance;
   RECT rc = { 0, 0, START_W, START_H };
   AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-  g_hWnd = CreateWindow(L"WindowClass", L"T3, Sachuk Aleksander Sergeevich, 5030102/90201",
+  g_hWnd = CreateWindow(L"WindowClass", L"T4, Sachuk Aleksander Sergeevich, 5030102/90201",
     WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX,
     CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
     nullptr);
@@ -87,7 +87,6 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
   //play secret sound
   PlaySound(TEXT("./src/songs/heh.wav"), NULL, SND_ASYNC);
-  getchar();
 
   // Init Device
   if (FAILED(Renderer::GetInstance().Init(g_hWnd, g_hInst, START_W, START_H)))

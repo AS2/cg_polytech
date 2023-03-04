@@ -6,11 +6,11 @@
 #include <directxcolors.h>
 #include <directxmath.h>
 
-#include <ctime>
-
 #include "camera.h"
 #include "input.h"
 #include "texture.h"
+#include "timer.h"
+#include "skybox.h"
 
 
 struct SimpleVertex
@@ -83,12 +83,10 @@ private:
   ID3D11RasterizerState* g_pRasterizerState = nullptr;
   ID3D11SamplerState* g_pSamplerState = nullptr;
 
-  // initialization clock
-  std::clock_t init_time;
-
   // initialization other thinngs (camera, input devices, etc.)
   Camera camera;
   Input input;
+  Skybox sb;
   Texture txt;
 
   // Velocity of world matrix rotation

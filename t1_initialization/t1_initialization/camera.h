@@ -20,6 +20,7 @@ public:
 
   // Get view matrix method
   void GetBaseViewMatrix(XMMATRIX& viewMatrix);
+  XMFLOAT3 GetPos();
 
   // Move camera with mouse method
   void Move(float dx, float dy, float wheel);
