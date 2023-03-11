@@ -64,7 +64,5 @@ private:
   // initialization other thinngs (camera, input devices, etc.)
   Camera camera;
   Input input;
-  Skybox sb;
   Scene sc;
-  Texture txt;
 };

@@ -153,7 +153,6 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
 
   // init skybox and scene
   sc.Init(g_pd3dDevice, g_pImmediateContext, width, height);
-  sb.Init(g_pd3dDevice, g_pImmediateContext, width, height);
 
   return S_OK;
 }
@@ -243,10 +242,6 @@ bool Renderer::Frame() {
   if (FAILED(hr))
     return SUCCEEDED(hr);
 
-  hr = sb.Frame(g_pImmediateContext, mView, mProjection, camera.GetPos());
-  if (FAILED(hr))
-    return SUCCEEDED(hr);
-
   return SUCCEEDED(hr);
 }
 
@@ -277,7 +272,6 @@ void Renderer::Render() {
   g_pImmediateContext->RSSetScissorRects(1, &rect);
 
   sc.Render(g_pImmediateContext);
-  sb.Render(g_pImmediateContext);
 
   g_pSwapChain->Present(0, 0);
 }
@@ -285,8 +279,6 @@ void Renderer::Render() {
 void Renderer::CleanupDevice() {
   camera.Realese();
   input.Realese();
-  txt.Release();
-  sb.Realese();
   sc.Realese();
 
   if (g_pImmediateContext) g_pImmediateContext->ClearState();
@@ -321,7 +313,6 @@ void Renderer::ResizeWindow(const HWND& g_hWnd) {
       hr = InitBackBuffer();
       input.Resize(width, height);
       sc.Resize(width, height);
-      sb.Resize(width, height);
     }
   }
 }

@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "skybox.h"
 #include "timer.h"
 #include "texture.h"
 
@@ -41,7 +42,9 @@ public:
 
   void Realese();
 
-  void Resize(int screenWidth, int screenHeight) {};
+  void Resize(int screenWidth, int screenHeight) { 
+    sb.Resize(screenWidth, screenHeight);
+  };
 
   void Render(ID3D11DeviceContext* context);
 
@@ -59,6 +62,8 @@ private:
   bool FramePlanes(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos);
   void RenderPlanes(ID3D11DeviceContext* context);
   void RealesePlanes();
+
+  float DistToPlane(WorldMatrixBuffer worldMatrix, XMFLOAT3 cameraPos);
 
   // dx11 vars
   // - for boxes
@@ -91,6 +96,9 @@ private:
 
   // Texture with aphex twin
   Texture txt;
+  Skybox sb;
+
+  bool firstNear = false;
 
   // Velocity of world matrix rotation
   float angle_velocity = 3.1415926f;

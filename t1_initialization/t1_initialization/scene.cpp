@@ -394,7 +394,7 @@ HRESULT Scene::InitPlanes(ID3D11Device* device, ID3D11DeviceContext* context, in
   // Set rastrizer state
   D3D11_RASTERIZER_DESC descRastr = {};
   descRastr.FillMode = D3D11_FILL_SOLID;
-  descRastr.CullMode = D3D11_CULL_BACK;
+  descRastr.CullMode = D3D11_CULL_NONE;
   descRastr.FrontCounterClockwise = false;
   descRastr.DepthBias = 0;
   descRastr.SlopeScaledDepthBias = 0.0f;
@@ -446,6 +446,11 @@ HRESULT Scene::Init(ID3D11Device* device, ID3D11DeviceContext* context, int scre
     return hr;
 
   hr = InitPlanes(device, context, screenWidth, screenHeight);
+  if (FAILED(hr))
+    return hr;
+
+  hr = sb.Init(device, context, screenWidth, screenHeight);
+
   return hr;
 }
 
@@ -482,6 +487,8 @@ void Scene::RealesePlanes() {
 void Scene::Realese() {
   RealeseBox();
   RealesePlanes();
+
+  sb.Realese();
 }
 
 void Scene::RenderBox(ID3D11DeviceContext* context) {
@@ -533,20 +540,39 @@ void Scene::RenderPlanes(ID3D11DeviceContext* context) {
   context->PSSetShader(g_pPixelShaderPlane, nullptr, 0);
   context->OMSetBlendState(g_pTransBlendStatePlane, nullptr, 0xFFFFFFFF);
 
-  {
-    context->VSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer1Plane);
-    context->DrawIndexed(6, 0, 0);
-  }
 
-  {
-    context->VSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer2Plane);
-    context->DrawIndexed(6, 0, 0);
+  if (!firstNear) {
+    {
+      context->VSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer2Plane);
+      context->PSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer2Plane);
+      context->DrawIndexed(6, 0, 0);
+    }
+
+    {
+      context->VSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer1Plane);
+      context->PSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer1Plane);
+      context->DrawIndexed(6, 0, 0);
+    }
+  }
+  else {
+    {
+      context->VSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer1Plane);
+      context->PSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer1Plane);
+      context->DrawIndexed(6, 0, 0);
+    }
+
+    {
+      context->VSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer2Plane);
+      context->PSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer2Plane);
+      context->DrawIndexed(6, 0, 0);
+    }
   }
 }
 
 void Scene::Render(ID3D11DeviceContext* context) {
   RenderBox(context);
-  //RenderPlanes(context);
+  sb.Render(context);
+  RenderPlanes(context);
 }
 
 bool Scene::FrameBox(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos) {
@@ -576,18 +602,36 @@ bool Scene::FrameBox(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX
   return S_OK;
 }
 
+float Scene::DistToPlane(WorldMatrixBuffer worldMatrix, XMFLOAT3 cameraPos) {
+  XMFLOAT4 rectVert[4];
+  float maxDist = -D3D11_FLOAT32_MAX;
+
+  std::copy(Vertices, Vertices + 4, rectVert);
+  for (int i = 0; i < 4; i++) {
+    XMStoreFloat4(&rectVert[i], XMVector4Transform(XMLoadFloat4(&rectVert[i]), worldMatrix.worldMatrix));
+    float dist = (rectVert[i].x * cameraPos.x) + (rectVert[i].y * cameraPos.y) + (rectVert[i].z * cameraPos.z);
+    maxDist = max(maxDist, dist);
+  }
+
+  return maxDist;
+}
+
 bool Scene::FramePlanes(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos) {
   // Update world matrix angle
   auto duration = Timer::GetInstance().Clock();
 
-  WorldMatrixBuffer worldMatrixBuffer;
-  worldMatrixBuffer.color = XMFLOAT4(0.9f, 0.0f, 0.1f, 0.5f);
-  worldMatrixBuffer.worldMatrix = XMMatrixTranslation((float)(sin(duration) * -3.0), 0, 0);
-  context->UpdateSubresource(g_pWorldMatrixBuffer1Plane, 0, nullptr, &worldMatrixBuffer, 0, 0);
+  WorldMatrixBuffer worldMatrixBuffer1;
+  worldMatrixBuffer1.color = XMFLOAT4(0.f, 0.0f, 1.f, 0.5f);
+  worldMatrixBuffer1.worldMatrix = XMMatrixTranslation(1.25f, 0, (float)(sin(duration) * -2.0));
+  context->UpdateSubresource(g_pWorldMatrixBuffer1Plane, 0, nullptr, &worldMatrixBuffer1, 0, 0);
 
-  worldMatrixBuffer.color = XMFLOAT4(0.1f, 0.0f, .9f, 0.5f);
-  worldMatrixBuffer.worldMatrix = XMMatrixTranslation((float)(sin(duration) * 3.0), 0, 0);
-  context->UpdateSubresource(g_pWorldMatrixBuffer2Plane, 0, nullptr, &worldMatrixBuffer, 0, 0);
+  WorldMatrixBuffer worldMatrixBuffer2;
+  worldMatrixBuffer2.color = XMFLOAT4(1.0f, 0.0f, 0.0f, 0.0f);
+  worldMatrixBuffer2.worldMatrix = XMMatrixTranslation(-1.25f, 0, (float)(sin(duration) * 2.0));
+  context->UpdateSubresource(g_pWorldMatrixBuffer2Plane, 0, nullptr, &worldMatrixBuffer2, 0, 0);
+
+  // count distances to planes
+  firstNear = DistToPlane(worldMatrixBuffer1, cameraPos) < DistToPlane(worldMatrixBuffer2, cameraPos);
 
   // Get the view matrix
   D3D11_MAPPED_SUBRESOURCE subresource;
@@ -597,12 +641,17 @@ bool Scene::FramePlanes(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMAT
 
   SceneMatrixBuffer& sceneBuffer = *reinterpret_cast<SceneMatrixBuffer*>(subresource.pData);
   sceneBuffer.viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
-  context->Unmap(g_pSceneMatrixBuffer, 0);
+  context->Unmap(g_pSceneMatrixBufferPlane, 0);
   
   return S_OK;
 }
 
 bool Scene::Frame(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos) {
-  return FrameBox(context, viewMatrix, projectionMatrix, cameraPos) &&
-    FramePlanes(context, viewMatrix, projectionMatrix, cameraPos);
+  FrameBox(context, viewMatrix, projectionMatrix, cameraPos);
+  
+  FramePlanes(context, viewMatrix, projectionMatrix, cameraPos);
+  
+  sb.Frame(context, viewMatrix, projectionMatrix, cameraPos);
+  
+  return true;
 }

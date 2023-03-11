@@ -22,8 +22,9 @@ struct PS_INPUT {
 PS_INPUT main(VS_INPUT input) {
   PS_INPUT output;
 
-  output.position = mul(worldMatrix, input.position);
-  output.position = mul(viewProjectionMatrix, output.position);
+  output.position = mul(viewProjectionMatrix, 
+    mul(worldMatrix, input.position)
+  );
 
   return output;
 }
