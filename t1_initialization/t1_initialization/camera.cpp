@@ -15,8 +15,8 @@ HRESULT Camera::InitCamera() {
 // Update frame method
 void Camera::Frame() {
   // animate camera
-  phi = XM_PI * (float)sin(Timer::GetInstance().Clock());
-  theta = XM_PI / 10.f * (float)sin(Timer::GetInstance().Clock() * 0.30);
+  //phi = XM_PI * (float)sin(Timer::GetInstance().Clock());
+  //theta = XM_PI / 10.f * (float)sin(Timer::GetInstance().Clock() * 0.30);
 
   XMFLOAT3 pos = GetPos();
   

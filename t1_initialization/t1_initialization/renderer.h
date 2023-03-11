@@ -40,8 +40,10 @@ public:
 private:
   // Initialization device method
   HRESULT InitDevice(const HWND& g_hWnd);
+  HRESULT InitBackBuffer();
 
   void HandleInput();
+
 
   // Private constructor (for singleton)
   Renderer() = default;
@@ -56,6 +58,8 @@ private:
   IDXGISwapChain*         g_pSwapChain = nullptr;
   IDXGISwapChain1*        g_pSwapChain1 = nullptr;
   ID3D11RenderTargetView* g_pRenderTargetView = nullptr;
+  ID3D11Texture2D*        g_pDepthBuffer = nullptr;
+  ID3D11DepthStencilView* g_pDepthBufferDSV = nullptr;
 
   // initialization other thinngs (camera, input devices, etc.)
   Camera camera;
