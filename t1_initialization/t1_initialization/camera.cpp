@@ -5,7 +5,7 @@
 HRESULT Camera::InitCamera() {
   phi = 0;
   theta = 0;
-  distanceToPoint = 4.0f;
+  distanceToPoint = 5.9f;
 
   pointOfInterest = XMFLOAT3(0.0f, 0.0f, 0.0f);
 

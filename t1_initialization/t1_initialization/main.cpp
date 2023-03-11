@@ -86,7 +86,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
   }
 
   //play secret sound
-  //PlaySound(TEXT("./src/songs/heh.wav"), NULL, SND_ASYNC);
+  PlaySound(TEXT("./src/songs/heh.wav"), NULL, SND_ASYNC);
 
   // Init Device
   if (FAILED(Renderer::GetInstance().Init(g_hWnd, g_hInst, START_W, START_H)))
