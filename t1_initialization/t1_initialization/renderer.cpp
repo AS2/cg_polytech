@@ -136,19 +136,6 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
   if (FAILED(hr))
     return hr;
 
-  // Create a render target view
-  ID3D11Texture2D* pBackBuffer = nullptr;
-  hr = g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
-  if (FAILED(hr))
-    return hr;
-
-  hr = g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &g_pRenderTargetView);
-  pBackBuffer->Release();
-  if (FAILED(hr))
-    return hr;
-
-  g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, nullptr);
-
   // Setup the viewport
   D3D11_VIEWPORT vp;
   vp.Width = (FLOAT)width;
@@ -159,10 +146,53 @@ HRESULT Renderer::InitDevice(const HWND& g_hWnd) {
   vp.TopLeftY = 0;
   g_pImmediateContext->RSSetViewports(1, &vp);
 
+  // Init back buffer
+  hr = InitBackBuffer();
+  if (FAILED(hr))
+    return hr;
+
+  // init skybox and scene
   sc.Init(g_pd3dDevice, g_pImmediateContext, width, height);
-  sb.Init(g_pd3dDevice, g_pImmediateContext, width, height);
 
   return S_OK;
+}
+
+HRESULT Renderer::InitBackBuffer() {
+  // Create a render target view
+  ID3D11Texture2D* pBackBuffer = NULL;
+  HRESULT hr = g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+  if (FAILED(hr))
+    return hr;
+
+  hr = g_pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &g_pRenderTargetView);
+  if (pBackBuffer) pBackBuffer->Release();
+  if (FAILED(hr))
+    return hr;
+
+  g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, nullptr);
+
+  if (g_pDepthBuffer) g_pDepthBuffer->Release();
+  if (g_pDepthBufferDSV) g_pDepthBufferDSV->Release();
+  
+  D3D11_TEXTURE2D_DESC desc = {};
+  desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+  desc.ArraySize = 1;
+  desc.MipLevels = 1;
+  desc.Usage = D3D11_USAGE_DEFAULT;
+  desc.Height = input.GetHeight();
+  desc.Width = input.GetWidth();
+  desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+  desc.CPUAccessFlags = 0;
+  desc.MiscFlags = 0;
+  desc.SampleDesc.Count = 1;
+  desc.SampleDesc.Quality = 0;
+
+  hr = g_pd3dDevice->CreateTexture2D(&desc, NULL, &g_pDepthBuffer);
+  if (FAILED(hr))
+    return hr;
+
+  hr = g_pd3dDevice->CreateDepthStencilView(g_pDepthBuffer, NULL, &g_pDepthBufferDSV);
+  return hr;
 }
 
 HRESULT Renderer::Init(const HWND& g_hWnd, const HINSTANCE& g_hInstance, UINT screenWidth, UINT screenHeight) {
@@ -205,14 +235,10 @@ bool Renderer::Frame() {
   XMMATRIX mView;
   camera.GetBaseViewMatrix(mView);
   // Get the projection matrix
-  XMMATRIX mProjection = XMMatrixPerspectiveFovLH(XM_PIDIV2, (FLOAT)input.GetWidth() / (FLOAT)input.GetHeight(), 0.01f, 100.0f);
+  XMMATRIX mProjection = XMMatrixPerspectiveFovLH(XM_PIDIV2, (FLOAT)input.GetWidth() / (FLOAT)input.GetHeight(), 100.0f, 0.01f);
   
   // Get the view matrix
   HRESULT hr = sc.Frame(g_pImmediateContext, mView, mProjection, camera.GetPos());
-  if (FAILED(hr))
-    return SUCCEEDED(hr);
-
-  hr = sb.Frame(g_pImmediateContext, mView, mProjection, camera.GetPos());
   if (FAILED(hr))
     return SUCCEEDED(hr);
 
@@ -223,17 +249,11 @@ void Renderer::Render() {
   g_pImmediateContext->ClearState();
 
   ID3D11RenderTargetView* views[] = { g_pRenderTargetView };
-  g_pImmediateContext->OMSetRenderTargets(1, views, nullptr);
+  g_pImmediateContext->OMSetRenderTargets(1, views, g_pDepthBufferDSV);
 
-  // Just clear the backbuffer
-  auto duration = Timer::GetInstance().Clock();
-
-  float ClearColor[4] = {
-    float(0.5 + 0.5 * sin(0.2 * duration)),
-    float(0.5 + 0.5 * sin(0.3 * duration)),
-    float(0.5 + 0.5 * sin(0.5 * duration)), 1 }; // RGBA
-
-  g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, ClearColor);
+  FLOAT BackColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+  g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, BackColor);
+  g_pImmediateContext->ClearDepthStencilView(g_pDepthBufferDSV, D3D11_CLEAR_DEPTH, 0.0f, 0);
 
   D3D11_VIEWPORT viewport;
   viewport.TopLeftX = 0;
@@ -251,7 +271,6 @@ void Renderer::Render() {
   rect.bottom = input.GetHeight();
   g_pImmediateContext->RSSetScissorRects(1, &rect);
 
-  sb.Render(g_pImmediateContext);
   sc.Render(g_pImmediateContext);
 
   g_pSwapChain->Present(0, 0);
@@ -260,12 +279,12 @@ void Renderer::Render() {
 void Renderer::CleanupDevice() {
   camera.Realese();
   input.Realese();
-  txt.Release();
-  sb.Realese();
   sc.Realese();
 
   if (g_pImmediateContext) g_pImmediateContext->ClearState();
 
+  if (g_pDepthBuffer) g_pDepthBuffer->Release();
+  if (g_pDepthBufferDSV) g_pDepthBufferDSV->Release();
   if (g_pRenderTargetView) g_pRenderTargetView->Release();
   if (g_pSwapChain1) g_pSwapChain1->Release();
   if (g_pSwapChain) g_pSwapChain->Release();
@@ -276,46 +295,24 @@ void Renderer::CleanupDevice() {
 }
 
 void Renderer::ResizeWindow(const HWND& g_hWnd) {
-  if (g_pSwapChain)
-  {
-    g_pImmediateContext->OMSetRenderTargets(0, 0, 0);
+  RECT rc;
+  GetClientRect(g_hWnd, &rc);
+  UINT width = rc.right - rc.left;
+  UINT height = rc.bottom - rc.top;
 
-    // Release all outstanding references to the swap chain's buffers.
-    g_pRenderTargetView->Release();
+  if (g_pSwapChain &&
+    (width != input.GetWidth() || height != input.GetHeight())) {
 
-    HRESULT hr;
-    // Preserve the existing buffer count and format.
-    // Automatically choose the width and height to match the client rect for HWNDs.
-    hr = g_pSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
+    if (g_pRenderTargetView) g_pRenderTargetView->Release();
 
-    // Get buffer and create a render-target-view.
-    ID3D11Texture2D* pBuffer;
-    hr = g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
-      (void**)&pBuffer);
-    
-    hr = g_pd3dDevice->CreateRenderTargetView(pBuffer, NULL,
-      &g_pRenderTargetView);
-    
-    pBuffer->Release();
-
-    g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, NULL);
-
-    // Set up the viewport.
-    RECT rc;
-    GetClientRect(g_hWnd, &rc);
-    UINT width = rc.right - rc.left;
-    UINT height = rc.bottom - rc.top;
-
-    D3D11_VIEWPORT vp;
-    vp.Width = (FLOAT)width;
-    vp.Height = (FLOAT)height;
-    vp.MinDepth = 0.0f;
-    vp.MaxDepth = 1.0f;
-    vp.TopLeftX = 0;
-    vp.TopLeftY = 0;
-    g_pImmediateContext->RSSetViewports(1, &vp);
-
-    input.Resize(width, height);
-    sb.Resize(width, height);
+    HRESULT hr = g_pSwapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+    assert(SUCCEEDED(hr));
+    if (SUCCEEDED(hr)) {
+      input.Resize(width, height);
+      
+      hr = InitBackBuffer();
+      input.Resize(width, height);
+      sc.Resize(width, height);
+    }
   }
 }

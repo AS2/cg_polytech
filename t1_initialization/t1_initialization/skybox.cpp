@@ -211,7 +211,7 @@ HRESULT Skybox::Init(ID3D11Device* device, ID3D11DeviceContext* context, int scr
     return hr;
 
   // load texture
-  hr = txt.InitEx(device, context, L"./src/skybox.dds");
+  hr = txt.InitEx(device, context, L"./src/skybox2.dds");
   if (FAILED(hr))
     return hr;
 

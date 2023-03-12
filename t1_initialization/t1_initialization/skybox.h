@@ -1,4 +1,3 @@
-// CubemMap.h - class for rendering cubemap
 #pragma once
 
 #include <d3dcompiler.h>

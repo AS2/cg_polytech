@@ -5,7 +5,7 @@
 HRESULT Camera::InitCamera() {
   phi = 0;
   theta = 0;
-  distanceToPoint = 4.0f;
+  distanceToPoint = 5.9f;
 
   pointOfInterest = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
@@ -15,8 +15,8 @@ HRESULT Camera::InitCamera() {
 // Update frame method
 void Camera::Frame() {
   // animate camera
-  phi = XM_PI * (float)sin(Timer::GetInstance().Clock());
-  theta = XM_PI / 10.f * (float)sin(Timer::GetInstance().Clock() * 0.30);
+  //phi = XM_PI * (float)sin(Timer::GetInstance().Clock());
+  //theta = XM_PI / 10.f * (float)sin(Timer::GetInstance().Clock() * 0.30);
 
   XMFLOAT3 pos = GetPos();
   

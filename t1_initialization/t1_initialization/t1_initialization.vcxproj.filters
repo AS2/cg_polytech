@@ -16,9 +16,6 @@
     <Filter Include="Renderer">
       <UniqueIdentifier>{05f041fe-0ba4-413c-bb2f-bf783a45ac04}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders">
-      <UniqueIdentifier>{b6f498e9-2063-41dc-9708-c5233df0d119}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Camera">
       <UniqueIdentifier>{7d01aa43-dce0-4637-969e-42a2f0e6afea}</UniqueIdentifier>
     </Filter>
@@ -40,11 +37,23 @@
     <Filter Include="Scene">
       <UniqueIdentifier>{9cfeebf5-3960-4805-a58e-fd943daeccbb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Scene\Shaders">
-      <UniqueIdentifier>{25f8e279-1f20-4f40-bcaf-0a753724ad3a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Skybox\Shaders">
       <UniqueIdentifier>{9fcf3e78-edd4-424f-8fce-e9084a398031}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NewFilter2">
+      <UniqueIdentifier>{951d486d-600d-414f-aba0-3be8bc37bb60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\Plane">
+      <UniqueIdentifier>{6daf989b-a5d1-4cb4-ab90-7371f3e23f03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\Plane\Shaders">
+      <UniqueIdentifier>{53d8f888-0b61-4452-89b7-4d0515e34c92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\Box">
+      <UniqueIdentifier>{c55094f5-967f-437a-850c-68bce334578e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\Box\Shaders">
+      <UniqueIdentifier>{25f8e279-1f20-4f40-bcaf-0a753724ad3a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -69,6 +78,12 @@
     </ClCompile>
     <ClCompile Include="scene.cpp">
       <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="plane.cpp">
+      <Filter>Scene\Plane</Filter>
+    </ClCompile>
+    <ClCompile Include="Box.cpp">
+      <Filter>Scene\Box</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -99,6 +114,13 @@
     <ClInclude Include="scene.h">
       <Filter>Scene</Filter>
     </ClInclude>
+    <ClInclude Include="plane.h">
+      <Filter>Scene\Plane</Filter>
+    </ClInclude>
+    <ClInclude Include="Box.h">
+      <Filter>Scene\Box</Filter>
+    </ClInclude>
+    <ClInclude Include="def.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="skybox_PS.hlsl">
@@ -108,10 +130,16 @@
       <Filter>Skybox\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="t2_PS.hlsl">
-      <Filter>Scene\Shaders</Filter>
+      <Filter>Scene\Box\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="t2_VS.hlsl">
-      <Filter>Scene\Shaders</Filter>
+      <Filter>Scene\Box\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="transparent_PS.hlsl">
+      <Filter>Scene\Plane\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="transparent_VS.hlsl">
+      <Filter>Scene\Plane\Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
