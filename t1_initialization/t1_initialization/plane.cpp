@@ -17,9 +17,10 @@ HRESULT Plane::CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoin
   // Disable optimizations to further improve shader debugging
   dwShaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
+  D3DInclude includeObj;
 
   ID3DBlob* pErrorBlob = nullptr;
-  hr = D3DCompileFromFile(szFileName, nullptr, nullptr, szEntryPoint, szShaderModel,
+  hr = D3DCompileFromFile(szFileName, nullptr, &includeObj, szEntryPoint, szShaderModel,
     dwShaderFlags, 0, ppBlobOut, &pErrorBlob);
   if (FAILED(hr))
   {
@@ -59,8 +60,7 @@ HRESULT Plane::Init(ID3D11Device* device, ID3D11DeviceContext* context, int scre
   // Define the input layout
   D3D11_INPUT_ELEMENT_DESC layout[] =
   {
-      {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-      {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+      {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0}
   };
   UINT numElements = ARRAYSIZE(layout);
 
@@ -160,7 +160,7 @@ HRESULT Plane::Init(ID3D11Device* device, ID3D11DeviceContext* context, int scre
   }
   
   D3D11_BUFFER_DESC descSMB = {};
-  descSMB.ByteWidth = sizeof(SceneMatrixBuffer);
+  descSMB.ByteWidth = sizeof(LightableSceneMatrixBuffer);
   descSMB.Usage = D3D11_USAGE_DYNAMIC;
   descSMB.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
   descSMB.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -277,7 +277,7 @@ float Plane::DistToPlane(XMMATRIX worldMatrix, XMFLOAT3 cameraPos) {
   return maxDist;
 }
 
-bool Plane::Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& worldMatricies, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos) {
+bool Plane::Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& worldMatricies, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos, std::vector<Light>& lights) {
   // Update world matricies
   WorldMatrixBuffer worldMatrixBuffer;
 
@@ -306,7 +306,16 @@ bool Plane::Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& wor
     return FAILED(hr);
 
   //
-  SceneMatrixBuffer& sceneBuffer = *reinterpret_cast<SceneMatrixBuffer*>(subresource.pData);
+  LightableSceneMatrixBuffer& sceneBuffer = *reinterpret_cast<LightableSceneMatrixBuffer*>(subresource.pData);
+  sceneBuffer.viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
+  sceneBuffer.cameraPos = XMFLOAT4(cameraPos.x, cameraPos.y, cameraPos.z, 1.0f);
+  sceneBuffer.ambientColor = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+  sceneBuffer.lightCount = XMINT4((int32_t)lights.size(), 0, 0, 0);
+  for (int i = 0; i < lights.size(); i++) {
+    sceneBuffer.lightPos[i] = lights[i].GetPosition();
+    sceneBuffer.lightColor[i] = lights[i].GetColor();
+  }
+
   sceneBuffer.viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
   context->Unmap(g_pSceneMatrixBuffer, 0);
 
