@@ -3,9 +3,9 @@
 
 // Initialization camera method
 HRESULT Camera::InitCamera() {
-  phi = 0;
-  theta = 0;
-  distanceToPoint = 5.9f;
+  phi = (120.f) / 180.f * XM_PI;
+  theta = (15.f) / 180.f * XM_PI;
+  distanceToPoint = 1.6f;
 
   pointOfInterest = XMFLOAT3(0.0f, 0.0f, 0.0f);
 

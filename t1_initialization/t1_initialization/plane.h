@@ -8,6 +8,8 @@
 #include <vector>
 
 #include "def.h"
+#include "Light.h"
+#include "D3DInclude.h"
 
 using namespace DirectX;
 
@@ -28,7 +30,7 @@ public:
 
   void Render(ID3D11DeviceContext* context);
 
-  bool Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& worldMatricies, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos);
+  bool Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& worldMatricies, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos, std::vector<Light>& lights);
 private:
   HRESULT CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut);
 

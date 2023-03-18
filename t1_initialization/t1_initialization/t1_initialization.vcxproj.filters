@@ -22,12 +22,6 @@
     <Filter Include="Input">
       <UniqueIdentifier>{15c5c2b9-1d91-44eb-8e8e-20b01e5e90df}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Textures">
-      <UniqueIdentifier>{5c6e920f-4e26-4060-865d-cc137c1f7056}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Textures\DDSTextureLoader">
-      <UniqueIdentifier>{5487fb1c-0948-4f41-a019-f45a26738615}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Skybox">
       <UniqueIdentifier>{2bb4708b-5967-4fdc-85d7-7d5408d3fd45}</UniqueIdentifier>
     </Filter>
@@ -37,23 +31,41 @@
     <Filter Include="Scene">
       <UniqueIdentifier>{9cfeebf5-3960-4805-a58e-fd943daeccbb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Skybox\Shaders">
-      <UniqueIdentifier>{9fcf3e78-edd4-424f-8fce-e9084a398031}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="NewFilter2">
-      <UniqueIdentifier>{951d486d-600d-414f-aba0-3be8bc37bb60}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Scene\Plane">
       <UniqueIdentifier>{6daf989b-a5d1-4cb4-ab90-7371f3e23f03}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\Plane\Shaders">
-      <UniqueIdentifier>{53d8f888-0b61-4452-89b7-4d0515e34c92}</UniqueIdentifier>
     </Filter>
     <Filter Include="Scene\Box">
       <UniqueIdentifier>{c55094f5-967f-437a-850c-68bce334578e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Scene\Box\Shaders">
-      <UniqueIdentifier>{25f8e279-1f20-4f40-bcaf-0a753724ad3a}</UniqueIdentifier>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{6d5c9f2f-48ce-462c-ba37-ec96a25623fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Plane">
+      <UniqueIdentifier>{d8e21ca7-7696-414c-bd73-5f2c93c576f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Box">
+      <UniqueIdentifier>{115f246e-cf98-4887-82ea-ad2d856c09e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\SkyBox">
+      <UniqueIdentifier>{29f0a2bf-ced0-4b72-99c2-ff1cd1734cc6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="D3DInclude">
+      <UniqueIdentifier>{c9739949-d267-47bd-bb63-8d2ec29e39aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\Light">
+      <UniqueIdentifier>{e5e383cc-7f09-4588-8103-e04569622c1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Lights">
+      <UniqueIdentifier>{9c6437b3-e1a1-4f9c-9bd4-16b1c3fbd196}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Materials">
+      <UniqueIdentifier>{a1aa2375-aa5c-4a47-92ff-5a2e02a06e83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Materials\Textures">
+      <UniqueIdentifier>{5c6e920f-4e26-4060-865d-cc137c1f7056}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Materials\Textures\DDSTextureLoader">
+      <UniqueIdentifier>{5487fb1c-0948-4f41-a019-f45a26738615}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -68,10 +80,10 @@
       <Filter>Input</Filter>
     </ClCompile>
     <ClCompile Include="DDSTextureLoader.cpp">
-      <Filter>Textures\DDSTextureLoader</Filter>
+      <Filter>Materials\Textures\DDSTextureLoader</Filter>
     </ClCompile>
     <ClCompile Include="texture.cpp">
-      <Filter>Textures</Filter>
+      <Filter>Materials\Textures</Filter>
     </ClCompile>
     <ClCompile Include="skybox.cpp">
       <Filter>Skybox</Filter>
@@ -82,8 +94,17 @@
     <ClCompile Include="plane.cpp">
       <Filter>Scene\Plane</Filter>
     </ClCompile>
-    <ClCompile Include="Box.cpp">
+    <ClCompile Include="box.cpp">
       <Filter>Scene\Box</Filter>
+    </ClCompile>
+    <ClCompile Include="D3DInclude.cpp">
+      <Filter>D3DInclude</Filter>
+    </ClCompile>
+    <ClCompile Include="light.cpp">
+      <Filter>Scene\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="material.cpp">
+      <Filter>Materials</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -100,15 +121,15 @@
       <Filter>Input</Filter>
     </ClInclude>
     <ClInclude Include="DDSTextureLoader.h">
-      <Filter>Textures\DDSTextureLoader</Filter>
+      <Filter>Materials\Textures\DDSTextureLoader</Filter>
     </ClInclude>
     <ClInclude Include="texture.h">
-      <Filter>Textures</Filter>
+      <Filter>Materials\Textures</Filter>
     </ClInclude>
     <ClInclude Include="skybox.h">
       <Filter>Skybox</Filter>
     </ClInclude>
-    <ClInclude Include="Timer.h">
+    <ClInclude Include="timer.h">
       <Filter>Timer</Filter>
     </ClInclude>
     <ClInclude Include="scene.h">
@@ -117,29 +138,50 @@
     <ClInclude Include="plane.h">
       <Filter>Scene\Plane</Filter>
     </ClInclude>
-    <ClInclude Include="Box.h">
+    <ClInclude Include="box.h">
       <Filter>Scene\Box</Filter>
     </ClInclude>
     <ClInclude Include="def.h" />
+    <ClInclude Include="sceneConstantBuffer.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="LightCalc.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D3DInclude.h">
+      <Filter>D3DInclude</Filter>
+    </ClInclude>
+    <ClInclude Include="light.h">
+      <Filter>Scene\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="material.h">
+      <Filter>Materials</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="skybox_PS.hlsl">
-      <Filter>Skybox\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="skybox_VS.hlsl">
-      <Filter>Skybox\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="t2_PS.hlsl">
-      <Filter>Scene\Box\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="t2_VS.hlsl">
-      <Filter>Scene\Box\Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="transparent_PS.hlsl">
-      <Filter>Scene\Plane\Shaders</Filter>
+      <Filter>Shaders\Plane</Filter>
     </FxCompile>
     <FxCompile Include="transparent_VS.hlsl">
-      <Filter>Scene\Plane\Shaders</Filter>
+      <Filter>Shaders\Plane</Filter>
+    </FxCompile>
+    <FxCompile Include="t2_PS.hlsl">
+      <Filter>Shaders\Box</Filter>
+    </FxCompile>
+    <FxCompile Include="t2_VS.hlsl">
+      <Filter>Shaders\Box</Filter>
+    </FxCompile>
+    <FxCompile Include="skybox_PS.hlsl">
+      <Filter>Shaders\SkyBox</Filter>
+    </FxCompile>
+    <FxCompile Include="skybox_VS.hlsl">
+      <Filter>Shaders\SkyBox</Filter>
+    </FxCompile>
+    <FxCompile Include="light_PS.hlsl">
+      <Filter>Shaders\Lights</Filter>
+    </FxCompile>
+    <FxCompile Include="light_VS.hlsl">
+      <Filter>Shaders\Lights</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

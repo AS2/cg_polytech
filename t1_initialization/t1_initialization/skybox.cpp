@@ -1,6 +1,6 @@
 #include "skybox.h"
 
-void Skybox::GenerateSphere(UINT LatLines, UINT LongLines, std::vector<SBVertex>& vertices, std::vector<UINT>& indices) {
+void Skybox::GenerateSphere(UINT LatLines, UINT LongLines, std::vector<SimpleVertex>& vertices, std::vector<UINT>& indices) {
   // generate verticies  
   numSphereVertices = ((LatLines - 2) * LongLines) + 2;
   numSphereFaces = ((LatLines - 3) * (LongLines) * 2) + (LongLines * 2);
@@ -90,7 +90,7 @@ void Skybox::GenerateSphere(UINT LatLines, UINT LongLines, std::vector<SBVertex>
 
 HRESULT Skybox::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screenWidth, int screenHeight) {
   // Create sphere
-  std::vector<SBVertex> vertices;
+  std::vector<SimpleVertex> vertices;
   std::vector<UINT> indices;
   GenerateSphere(30, 30, vertices, indices);
 
@@ -100,7 +100,7 @@ HRESULT Skybox::Init(ID3D11Device* device, ID3D11DeviceContext* context, int scr
   };
 
   D3D11_BUFFER_DESC descVert = {};
-  descVert.ByteWidth = sizeof(SBVertex) * numSphereVertices;
+  descVert.ByteWidth = sizeof(SimpleVertex) * numSphereVertices;
   descVert.Usage = D3D11_USAGE_IMMUTABLE;
   descVert.BindFlags = D3D11_BIND_VERTEX_BUFFER;
   descVert.CPUAccessFlags = 0;

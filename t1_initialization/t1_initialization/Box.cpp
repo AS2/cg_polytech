@@ -15,9 +15,10 @@ HRESULT Box::CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint,
   // Disable optimizations to further improve shader debugging
   dwShaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
+  D3DInclude includeObj;
 
   ID3DBlob* pErrorBlob = nullptr;
-  hr = D3DCompileFromFile(szFileName, nullptr, nullptr, szEntryPoint, szShaderModel,
+  hr = D3DCompileFromFile(szFileName, nullptr, &includeObj, szEntryPoint, szShaderModel,
     dwShaderFlags, 0, ppBlobOut, &pErrorBlob);
   if (FAILED(hr))
   {
@@ -33,7 +34,7 @@ HRESULT Box::CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint,
   return S_OK;
 }
 
-HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screenWidth, int screenHeight, UINT cnt) {
+HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screenWidth, int screenHeight, const MaterialParams& params) {
   // Compile the vertex shader
   ID3DBlob* pVSBlob = nullptr;
   HRESULT hr = CompileShaderFromFile(L"t2_VS.hlsl", "main", "vs_5_0", &pVSBlob);
@@ -56,7 +57,9 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
   D3D11_INPUT_ELEMENT_DESC layout[] =
   {
       {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-      {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+      {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}, 
+      {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0},
+      {"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
   };
   UINT numElements = ARRAYSIZE(layout);
 
@@ -86,40 +89,42 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
   if (FAILED(hr))
     return hr;
 
-  // Load text
-  hr = txt.Init(device, context, L"./src/hah2.dds");
+  // Load texts
+  hr = material.Init(device, context, params);
+  if (FAILED(hr))
+    return hr;
 
   // Create vertex buffer
   TexVertex vertices[] = {
-    {-0.5, -0.5,  0.5, 0, 1},
-    { 0.5, -0.5,  0.5, 1, 1},
-    { 0.5, -0.5, -0.5, 1, 0},
-    {-0.5, -0.5, -0.5, 0, 0},
+    {{-0.5, -0.5,  0.5}, {0, 1}, {0, -1, 0}, {1, 0, 0}},
+    {{ 0.5, -0.5,  0.5}, {1, 1}, {0, -1, 0}, {1, 0, 0}},
+    {{ 0.5, -0.5, -0.5}, {1, 0}, {0, -1, 0}, {1, 0, 0}},
+    {{-0.5, -0.5, -0.5}, {0, 0}, {0, -1, 0}, {1, 0, 0}},
 
-    {-0.5,  0.5, -0.5, 1, 1},
-    { 0.5,  0.5, -0.5, 0, 1},
-    { 0.5,  0.5,  0.5, 0, 0},
-    {-0.5,  0.5,  0.5, 1, 0},
+    {{-0.5,  0.5, -0.5}, {1, 1}, {0, 1, 0}, {1, 0, 0}},
+    {{ 0.5,  0.5, -0.5}, {0, 1}, {0, 1, 0}, {1, 0, 0}},
+    {{ 0.5,  0.5,  0.5}, {0, 0}, {0, 1, 0}, {1, 0, 0}},
+    {{-0.5,  0.5,  0.5}, {1, 0}, {0, 1, 0}, {1, 0, 0}},
 
-    { 0.5, -0.5, -0.5, 0, 1},
-    { 0.5, -0.5,  0.5, 1, 1},
-    { 0.5,  0.5,  0.5, 1, 0},
-    { 0.5,  0.5, -0.5, 0, 0},
+    {{ 0.5, -0.5, -0.5}, {0, 1}, {1, 0, 0}, {0, 0, 1}},
+    {{ 0.5, -0.5,  0.5}, {1, 1}, {1, 0, 0}, {0, 0, 1}},
+    {{ 0.5,  0.5,  0.5}, {1, 0}, {1, 0, 0}, {0, 0, 1}},
+    {{ 0.5,  0.5, -0.5}, {0, 0}, {1, 0, 0}, {0, 0, 1}},
 
-    {-0.5, -0.5,  0.5, 0, 1},
-    {-0.5, -0.5, -0.5, 1, 1},
-    {-0.5,  0.5, -0.5, 1, 0},
-    {-0.5,  0.5,  0.5, 0, 0},
+    {{-0.5, -0.5,  0.5}, {0, 1}, {-1, 0, 0}, {0, 0, -1}},
+    {{-0.5, -0.5, -0.5}, {1, 1}, {-1, 0, 0}, {0, 0, -1}},
+    {{-0.5,  0.5, -0.5}, {1, 0}, {-1, 0, 0}, {0, 0, -1}},
+    {{-0.5,  0.5,  0.5}, {0, 0}, {-1, 0, 0}, {0, 0, -1}},
 
-    { 0.5, -0.5,  0.5, 1, 1},
-    {-0.5, -0.5,  0.5, 0, 1},
-    {-0.5,  0.5,  0.5, 0, 0},
-    { 0.5,  0.5,  0.5, 1, 0},
+    {{ 0.5, -0.5,  0.5}, {1, 1}, {0, 0, 1}, {-1, 0, 0}},
+    {{-0.5, -0.5,  0.5}, {0, 1}, {0, 0, 1}, {-1, 0, 0}},
+    {{-0.5,  0.5,  0.5}, {0, 0}, {0, 0, 1}, {-1, 0, 0}},
+    {{ 0.5,  0.5,  0.5}, {1, 0}, {0, 0, 1}, {-1, 0, 0}},
 
-    {-0.5, -0.5, -0.5, 1, 1},
-    { 0.5, -0.5, -0.5, 0, 1},
-    { 0.5,  0.5, -0.5, 0, 0},
-    {-0.5,  0.5, -0.5, 1, 0}
+    {{-0.5, -0.5, -0.5}, {1, 1}, {0, 0, -1}, {1, 0, 0}},
+    {{ 0.5, -0.5, -0.5}, {0, 1}, {0, 0, -1}, {1, 0, 0}},
+    {{ 0.5,  0.5, -0.5}, {0, 0}, {0, 0, -1}, {1, 0, 0}},
+    {{-0.5,  0.5, -0.5}, {1, 0}, {0, 0, -1}, {1, 0, 0}}
   };
 
   USHORT indices[] = {
@@ -187,15 +192,12 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
   data.SysMemPitch = sizeof(worldMatrixBuffer);
   data.SysMemSlicePitch = 0;
 
-  g_pWorldMatrixBuffers = std::vector<ID3D11Buffer*>(cnt, nullptr);
-  for (UINT i = 0; i < cnt; i++) {
-    hr = device->CreateBuffer(&descWMB, &data, &g_pWorldMatrixBuffers[i]);
-    if (FAILED(hr))
-      return hr;
-  }
+  hr = device->CreateBuffer(&descWMB, &data, &g_pWorldMatrixBuffer);
+  if (FAILED(hr))
+    return hr;
   
   D3D11_BUFFER_DESC descSMB = {};
-  descSMB.ByteWidth = sizeof(SceneMatrixBuffer);
+  descSMB.ByteWidth = sizeof(LightableSceneMatrixBuffer);
   descSMB.Usage = D3D11_USAGE_DYNAMIC;
   descSMB.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
   descSMB.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -260,14 +262,12 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
 
 
 void Box::Realese() {
-  txt.Release();
+  material.Realese();
 
   if (g_pSamplerState) g_pSamplerState->Release();
   if (g_pRasterizerState) g_pRasterizerState->Release();
 
-  for (auto &buffer : g_pWorldMatrixBuffers)
-    if (buffer) 
-      buffer->Release();
+  if (g_pWorldMatrixBuffer) g_pWorldMatrixBuffer->Release();
 
   if (g_pDepthState) g_pDepthState->Release();
   if (g_pSceneMatrixBuffer) g_pSceneMatrixBuffer->Release();
@@ -286,10 +286,10 @@ void Box::Render(ID3D11DeviceContext* context) {
   ID3D11SamplerState* samplers[] = { g_pSamplerState };
   context->PSSetSamplers(0, 1, samplers);
 
-  ID3D11ShaderResourceView* resources[] = { txt.GetTexture() };
-  context->PSSetShaderResources(0, 1, resources);
+  material.AttachToShaders(context);
+  
   ID3D11Buffer* vertexBuffers[] = { g_pVertexBuffer };
-  UINT strides[] = { 20 };
+  UINT strides[] = { sizeof(TexVertex) };
   UINT offsets[] = { 0 };
 
   context->IASetVertexBuffers(0, 1, vertexBuffers, strides, offsets);
@@ -298,21 +298,20 @@ void Box::Render(ID3D11DeviceContext* context) {
   context->VSSetShader(g_pVertexShader, nullptr, 0);
   context->VSSetConstantBuffers(1, 1, &g_pSceneMatrixBuffer);
   context->PSSetShader(g_pPixelShader, nullptr, 0);
+  context->PSSetConstantBuffers(1, 1, &g_pSceneMatrixBuffer);
 
-  for (auto& buffer : g_pWorldMatrixBuffers) {
-    context->VSSetConstantBuffers(0, 1, &buffer);
-    context->DrawIndexed(36, 0, 0);
-  }
+  context->PSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer);
+  context->VSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer);
+  context->DrawIndexed(36, 0, 0);
 }
 
 
-bool Box::Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& worldMatricies, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos) {
+bool Box::Frame(ID3D11DeviceContext* context, XMMATRIX& worldMatrix, XMMATRIX& viewMatrix, XMMATRIX& projectionMatrix, XMFLOAT3& cameraPos, std::vector<Light>& lights) {
   // Update world matrix angle of first cube
   WorldMatrixBuffer worldMatrixBuffer;
-  for (int i = 0; i < worldMatricies.size() && i < g_pWorldMatrixBuffers.size(); i++) {
-    worldMatrixBuffer.worldMatrix = worldMatricies[i];
-    context->UpdateSubresource(g_pWorldMatrixBuffers[i], 0, nullptr, &worldMatrixBuffer, 0, 0);
-  }
+  worldMatrixBuffer.worldMatrix = worldMatrix;
+  worldMatrixBuffer.color = XMFLOAT4(material.GetShines(), 0.0f, 0.0f, 0.0f); // its shine of boxes
+  context->UpdateSubresource(g_pWorldMatrixBuffer, 0, nullptr, &worldMatrixBuffer, 0, 0);
 
   // Get the view matrix
   D3D11_MAPPED_SUBRESOURCE subresource;
@@ -320,8 +319,16 @@ bool Box::Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& world
   if (FAILED(hr))
     return FAILED(hr);
 
-  SceneMatrixBuffer& sceneBuffer = *reinterpret_cast<SceneMatrixBuffer*>(subresource.pData);
+  LightableSceneMatrixBuffer& sceneBuffer = *reinterpret_cast<LightableSceneMatrixBuffer*>(subresource.pData);
   sceneBuffer.viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
+  sceneBuffer.cameraPos = XMFLOAT4(cameraPos.x, cameraPos.y, cameraPos.z, 1.0f);
+  sceneBuffer.ambientColor = XMFLOAT4(0.6f, 0.6f, 0.3f, 1.0f);
+  sceneBuffer.lightCount = XMINT4((int32_t)lights.size(), 0, 0, 0);
+  for (int i = 0; i < lights.size(); i++) {
+    sceneBuffer.lightPos[i] = lights[i].GetPosition();
+    sceneBuffer.lightColor[i] = lights[i].GetColor();
+  }
+
   context->Unmap(g_pSceneMatrixBuffer, 0);
 
   return S_OK;

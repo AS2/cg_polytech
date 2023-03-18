@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "skybox.h"
+#include "light.h"
 #include "box.h"
 #include "plane.h"
 #include "timer.h"
@@ -31,8 +32,9 @@ private:
   bool FrameBoxes(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos);
   bool FramePlanes(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos);
 
-  Box boxes;
+  Box box;
   Plane planes;
+  std::vector<Light> lights;
   
   Skybox sb;
 

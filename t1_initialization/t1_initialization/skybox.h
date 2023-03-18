@@ -8,23 +8,9 @@
 #include <vector>
 
 #include "texture.h"
+#include "def.h"
 
 using namespace DirectX;
-
-struct SBVertex
-{
-  float x, y, z;      // positional coords
-};
-
-struct SBWorldMatrixBuffer {
-  XMMATRIX worldMatrix;
-  XMFLOAT4 size;
-};
-
-struct SBSceneMatrixBuffer {
-  XMMATRIX viewProjectionMatrix;
-  XMFLOAT4 cameraPos;
-};
 
 class Skybox {
 public:
@@ -39,7 +25,7 @@ public:
   bool Frame(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos);
 
 private:
-  void GenerateSphere(UINT LatLines, UINT LongLines, std::vector<SBVertex>& vertices, std::vector<UINT>& indices);
+  void GenerateSphere(UINT LatLines, UINT LongLines, std::vector<SimpleVertex>& vertices, std::vector<UINT>& indices);
 
   // dx11 vars
   ID3D11Buffer* g_pVertexBuffer = nullptr;
