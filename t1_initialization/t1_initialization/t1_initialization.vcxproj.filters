@@ -70,6 +70,15 @@
     <Filter Include="Frustum">
       <UniqueIdentifier>{e62779d0-0a02-4e53-a524-7e3b380d3c6f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\renderTexture">
+      <UniqueIdentifier>{0ad27230-46a8-4e0b-8d7a-d89265d037b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Postprocessing">
+      <UniqueIdentifier>{c08728e9-0716-4ed6-830b-a8ee0aaec94e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Postprocessing">
+      <UniqueIdentifier>{74888425-04e7-4998-bf23-128e4f100889}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -108,6 +117,12 @@
     </ClCompile>
     <ClCompile Include="frustumCulling.cpp">
       <Filter>Frustum</Filter>
+    </ClCompile>
+    <ClCompile Include="renderTexture.cpp">
+      <Filter>Renderer\renderTexture</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing.cpp">
+      <Filter>Renderer\Postprocessing</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -173,6 +188,12 @@
     <ClInclude Include="lightSourcesCB.h">
       <Filter>Shaders\Lights</Filter>
     </ClInclude>
+    <ClInclude Include="renderTexture.h">
+      <Filter>Renderer\renderTexture</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing.h">
+      <Filter>Renderer\Postprocessing</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="transparent_PS.hlsl">
@@ -198,6 +219,12 @@
     </FxCompile>
     <FxCompile Include="light_VS.hlsl">
       <Filter>Shaders\Lights</Filter>
+    </FxCompile>
+    <FxCompile Include="Postprocessing_VS.hlsl">
+      <Filter>Shaders\Postprocessing</Filter>
+    </FxCompile>
+    <FxCompile Include="Postprocessing_PS.hlsl">
+      <Filter>Shaders\Postprocessing</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

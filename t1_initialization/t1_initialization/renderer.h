@@ -6,12 +6,11 @@
 #include <directxcolors.h>
 #include <directxmath.h>
 
+#include "renderTexture.h"
+#include "postprocessing.h"
 #include "camera.h"
 #include "input.h"
-#include "texture.h"
-#include "timer.h"
 #include "scene.h"
-#include "skybox.h"
 
 
 // Make renderer class
@@ -60,6 +59,10 @@ private:
   ID3D11RenderTargetView* g_pRenderTargetView = nullptr;
   ID3D11Texture2D*        g_pDepthBuffer = nullptr;
   ID3D11DepthStencilView* g_pDepthBufferDSV = nullptr;
+
+  // render postprocessing
+  RenderTexture renderTexture;
+  Postprocessing postprocessing;
 
   // initialization other thinngs (camera, input devices, etc.)
   Camera camera;

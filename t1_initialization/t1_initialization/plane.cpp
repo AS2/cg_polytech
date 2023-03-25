@@ -321,7 +321,7 @@ bool Plane::Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& wor
 
   LightableCB& lightBuffer = *reinterpret_cast<LightableCB*>(subresource.pData);
   lightBuffer.cameraPos = XMFLOAT4(cameraPos.x, cameraPos.y, cameraPos.z, 1.0f);
-  lightBuffer.ambientColor = XMFLOAT4(0.9f, 0.9f, 0.3f, 1.0f);
+  lightBuffer.ambientColor = XMFLOAT4(0.75f, 0.75f, 0.75f, 1.0f);
   auto& lightColors = lights.GetColors();
   auto& lightPos = lights.GetPositions();
   lightBuffer.lightCount = XMINT4(int(lightColors.size()), 0, 0, 0);

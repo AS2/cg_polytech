@@ -38,7 +38,7 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
   assert(positions.size() == MAX_CUBES);
 
   // Init frustum culling
-  frustum.Init(0.1f);
+  frustum.Init(0.01f);
 
   // Init cubes params
   for (int i = 0; i < MAX_CUBES; i++) {
@@ -411,7 +411,7 @@ bool Box::Frame(ID3D11DeviceContext* context, XMMATRIX& viewMatrix, XMMATRIX& pr
 
   LightableCB& lightBuffer = *reinterpret_cast<LightableCB*>(subresource.pData);
   lightBuffer.cameraPos = XMFLOAT4(cameraPos.x, cameraPos.y, cameraPos.z, 1.0f);
-  lightBuffer.ambientColor = XMFLOAT4(0.9f, 0.9f, 0.3f, 1.0f);
+  lightBuffer.ambientColor = XMFLOAT4(0.75f, 0.75f, 0.75f, 1.0f);
   auto& lightColors = lights.GetColors();
   auto& lightPos = lights.GetPositions();
   lightBuffer.lightCount = XMINT4(int(lightColors.size()), 1, 0, 0);
