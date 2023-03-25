@@ -12,7 +12,7 @@ using namespace DirectX;
 
 class Light {
 public:
-  HRESULT Init(ID3D11Device* device, ID3D11DeviceContext* context, int screenWidth, int screenHeight, XMFLOAT4 color, XMFLOAT4 position);
+  HRESULT Init(ID3D11Device* device, ID3D11DeviceContext* context, int screenWidth, int screenHeight, const std::vector<XMFLOAT4>& colors, const std::vector<XMFLOAT4>& positions);
 
   void Realese();
 
@@ -22,8 +22,8 @@ public:
   
   bool Frame(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos);
 
-  XMFLOAT4 GetColor() { return color; };
-  XMFLOAT4 GetPosition() { return position; };
+  const std::vector<XMFLOAT4>& GetColors() const { return colors; };
+  const std::vector<XMFLOAT4>& GetPositions() const { return positions; };
 private:
   void GenerateSphere(UINT LatLines, UINT LongLines, std::vector<SimpleVertex>& vertices, std::vector<UINT>& indices);
 
@@ -31,6 +31,7 @@ private:
   ID3D11Buffer* g_pVertexBuffer = nullptr;
   ID3D11Buffer* g_pIndexBuffer = nullptr;
   ID3D11Buffer* g_pWorldMatrixBuffer = nullptr;
+  ID3D11Buffer* g_pGeomBuffer = nullptr;
   ID3D11Buffer* g_pSceneMatrixBuffer = nullptr;
   ID3D11RasterizerState* g_pRasterizerState = nullptr;
 
@@ -43,6 +44,6 @@ private:
   UINT numSphereFaces = 0;
   float radius = 0.1f;
 
-  XMFLOAT4 color;
-  XMFLOAT4 position;
+  std::vector<XMFLOAT4> colors;
+  std::vector<XMFLOAT4> positions;
 };

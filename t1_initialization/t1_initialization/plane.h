@@ -30,7 +30,7 @@ public:
 
   void Render(ID3D11DeviceContext* context);
 
-  bool Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& worldMatricies, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos, std::vector<Light>& lights);
+  bool Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& worldMatricies, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos, const Light& lights);
 private:
   HRESULT CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut);
 
@@ -44,6 +44,7 @@ private:
   ID3D11Buffer* g_pVertexBuffer = nullptr;
   ID3D11Buffer* g_pIndexBuffer = nullptr;
   ID3D11Buffer* g_pSceneMatrixBuffer = nullptr;
+  ID3D11Buffer* g_LightConstantBuffer = nullptr;
   ID3D11RasterizerState* g_pRasterizerState = nullptr;
   ID3D11DepthStencilState* g_pDepthState = nullptr;
   ID3D11BlendState* g_pTransBlendState = nullptr;
