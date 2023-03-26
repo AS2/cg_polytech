@@ -88,14 +88,17 @@ void Light::GenerateSphere(UINT LatLines, UINT LongLines, std::vector<SimpleVert
   return;
 }
 
-HRESULT Light::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screenWidth, int screenHeight, XMFLOAT4 color, XMFLOAT4 position) {
+HRESULT Light::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screenWidth, int screenHeight, const std::vector<XMFLOAT4> &colors, const std::vector<XMFLOAT4> &positions) {
   // Create sphere
   std::vector<SimpleVertex> vertices;
   std::vector<UINT> indices;
   GenerateSphere(10, 10, vertices, indices);
 
-  this->color = color;
-  this->position = position;
+  this->colors = colors;
+  this->positions = positions;
+
+  assert(this->colors.size() == MAX_LIGHT_SOURCES);
+  assert(this->positions.size() == MAX_LIGHT_SOURCES);
 
   // Create index array
   static const D3D11_INPUT_ELEMENT_DESC InputDesc[] = {
@@ -141,8 +144,9 @@ HRESULT Light::Init(ID3D11Device* device, ID3D11DeviceContext* context, int scre
 #ifdef _DEBUG
   flags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
+  D3DInclude includeObj;
 
-  hr = D3DCompileFromFile(L"light_VS.hlsl", NULL, NULL, "main", "vs_5_0", flags, 0, &vertexShaderBuffer, NULL);
+  hr = D3DCompileFromFile(L"light_VS.hlsl", NULL, &includeObj, "main", "vs_5_0", flags, 0, &vertexShaderBuffer, NULL);
   if (FAILED(hr))
     return hr;
 
@@ -150,7 +154,7 @@ HRESULT Light::Init(ID3D11Device* device, ID3D11DeviceContext* context, int scre
   if (FAILED(hr))
     return hr;
 
-  hr = D3DCompileFromFile(L"light_PS.hlsl", NULL, NULL, "main", "ps_5_0", flags, 0, &pixelShaderBuffer, NULL);
+  hr = D3DCompileFromFile(L"light_PS.hlsl", NULL, &includeObj, "main", "ps_5_0", flags, 0, &pixelShaderBuffer, NULL);
   if (FAILED(hr))
     return hr;
 
@@ -165,19 +169,27 @@ HRESULT Light::Init(ID3D11Device* device, ID3D11DeviceContext* context, int scre
 
   // Set constant buffers
   D3D11_BUFFER_DESC descWM = {};
-  descWM.ByteWidth = sizeof(WorldMatrixBuffer);
+  descWM.ByteWidth = (UINT)(sizeof(WorldMatrixBuffer) * colors.size());
   descWM.Usage = D3D11_USAGE_DEFAULT;
   descWM.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
   descWM.CPUAccessFlags = 0;
   descWM.MiscFlags = 0;
   descWM.StructureByteStride = 0;
 
-  WorldMatrixBuffer worldMatrixBuffer;
-  worldMatrixBuffer.worldMatrix = DirectX::XMMatrixIdentity();
+  WorldMatrixBuffer lightGeomBuffer[MAX_LIGHT_SOURCES];
+  for (UINT i = 0; i < MAX_LIGHT_SOURCES; i++) {
+    lightGeomBuffer[i].worldMatrix =
+      DirectX::XMMatrixScaling(0.1f, 0.1f, 0.1f) * 
+      XMMatrixTranslation(
+        this->positions[i].x,
+        this->positions[i].y,
+        this->positions[i].z);
+    lightGeomBuffer[i].color = this->colors[i];
+  }
 
   D3D11_SUBRESOURCE_DATA data;
-  data.pSysMem = &worldMatrixBuffer;
-  data.SysMemPitch = sizeof(worldMatrixBuffer);
+  data.pSysMem = &lightGeomBuffer;
+  data.SysMemPitch = sizeof(lightGeomBuffer);
   data.SysMemSlicePitch = 0;
 
   hr = device->CreateBuffer(&descWM, &data, &g_pWorldMatrixBuffer);
@@ -220,6 +232,7 @@ HRESULT Light::Init(ID3D11Device* device, ID3D11DeviceContext* context, int scre
 
 void Light::Realese() {
   if (g_pRasterizerState) g_pRasterizerState->Release();
+  if (g_pGeomBuffer) g_pGeomBuffer->Release();
   if (g_pWorldMatrixBuffer) g_pWorldMatrixBuffer->Release();
   if (g_pSceneMatrixBuffer) g_pSceneMatrixBuffer->Release();
   if (g_pIndexBuffer) g_pIndexBuffer->Release();
@@ -247,17 +260,20 @@ void Light::Render(ID3D11DeviceContext* context) {
   context->PSSetShader(g_pPixelShader, nullptr, 0);
   context->PSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer);
 
-  context->DrawIndexed(numSphereFaces * 3, 0, 0);
+  context->DrawIndexedInstanced(numSphereFaces * 3, (UINT)colors.size(), 0, 0, 0);
 }
 
 bool Light::Frame(ID3D11DeviceContext* context, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos) {
   // Update world matrix
-  WorldMatrixBuffer worldMatrixBuffer;
+  WorldMatrixBuffer lightGeomBuffer[MAX_LIGHT_SOURCES];
+  for (int i = 0; i < MAX_LIGHT_SOURCES; i++) {
+    lightGeomBuffer[i].worldMatrix = 
+      DirectX::XMMatrixScaling(0.1f, 0.1f, 0.1f) * 
+      XMMatrixTranslation(positions[i].x, positions[i].y, positions[i].z);
+    lightGeomBuffer[i].color = colors[i];
+  }
 
-  worldMatrixBuffer.worldMatrix = XMMatrixScaling(0.1f, 0.1f, 0.1f) * XMMatrixTranslation(position.x, position.y, position.z);
-  worldMatrixBuffer.color = color;
-  
-  context->UpdateSubresource(g_pWorldMatrixBuffer, 0, nullptr, &worldMatrixBuffer, 0, 0);
+  context->UpdateSubresource(g_pWorldMatrixBuffer, 0, nullptr, &lightGeomBuffer, 0, 0);
 
   // Update Scene matrix
   D3D11_MAPPED_SUBRESOURCE subresource;

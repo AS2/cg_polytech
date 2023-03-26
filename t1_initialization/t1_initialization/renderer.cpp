@@ -175,7 +175,7 @@ HRESULT Renderer::InitBackBuffer() {
   if (g_pDepthBufferDSV) g_pDepthBufferDSV->Release();
   
   D3D11_TEXTURE2D_DESC desc = {};
-  desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+  desc.Format = DXGI_FORMAT_D32_FLOAT;
   desc.ArraySize = 1;
   desc.MipLevels = 1;
   desc.Usage = D3D11_USAGE_DEFAULT;
@@ -208,6 +208,14 @@ HRESULT Renderer::Init(const HWND& g_hWnd, const HINSTANCE& g_hInstance, UINT sc
   if (FAILED(hr))
     return hr;
 
+  hr = renderTexture.Init(g_pd3dDevice, screenWidth, screenHeight);
+  if (FAILED(hr))
+    return hr;
+
+  hr = postprocessing.Init(g_pd3dDevice, g_hWnd);
+  if (FAILED(hr))
+    return hr;
+
   return S_OK;
 }
 
@@ -224,6 +232,8 @@ void Renderer::HandleInput() {
 
 // Update frame method
 bool Renderer::Frame() {
+  postprocessing.Frame(g_pImmediateContext);
+
   // update inputs
   input.Frame();
   
@@ -248,13 +258,6 @@ bool Renderer::Frame() {
 void Renderer::Render() {
   g_pImmediateContext->ClearState();
 
-  ID3D11RenderTargetView* views[] = { g_pRenderTargetView };
-  g_pImmediateContext->OMSetRenderTargets(1, views, g_pDepthBufferDSV);
-
-  FLOAT BackColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
-  g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, BackColor);
-  g_pImmediateContext->ClearDepthStencilView(g_pDepthBufferDSV, D3D11_CLEAR_DEPTH, 0.0f, 0);
-
   D3D11_VIEWPORT viewport;
   viewport.TopLeftX = 0;
   viewport.TopLeftY = 0;
@@ -271,7 +274,23 @@ void Renderer::Render() {
   rect.bottom = input.GetHeight();
   g_pImmediateContext->RSSetScissorRects(1, &rect);
 
+  // Render scene to texture
+  renderTexture.SetRenderTarget(g_pImmediateContext, g_pDepthBufferDSV);
+  renderTexture.ClearRenderTarget(g_pImmediateContext, g_pDepthBufferDSV, 0.0f, 0.0f, 0.0f, 1.0f);
+
   sc.Render(g_pImmediateContext);
+
+  ID3D11RenderTargetView* views[] = { g_pRenderTargetView };
+  g_pImmediateContext->OMSetRenderTargets(1, views, g_pDepthBufferDSV);
+
+  static const FLOAT BackColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+  g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, BackColor);
+  g_pImmediateContext->ClearDepthStencilView(g_pDepthBufferDSV, D3D11_CLEAR_DEPTH, 0.0f, 0);
+
+  // Render texture to screen
+  postprocessing.Render(g_pImmediateContext, 
+    renderTexture.GetShaderResourceView(),
+    g_pRenderTargetView, viewport);
 
   g_pSwapChain->Present(0, 0);
 }
@@ -280,6 +299,8 @@ void Renderer::CleanupDevice() {
   camera.Realese();
   input.Realese();
   sc.Realese();
+  renderTexture.Release();
+  postprocessing.Release();
 
   if (g_pImmediateContext) g_pImmediateContext->ClearState();
 
@@ -313,6 +334,7 @@ void Renderer::ResizeWindow(const HWND& g_hWnd) {
       hr = InitBackBuffer();
       input.Resize(width, height);
       sc.Resize(width, height);
+      renderTexture.Resize(g_pd3dDevice, width, height);
     }
   }
 }

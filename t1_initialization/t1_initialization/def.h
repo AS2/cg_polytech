@@ -2,10 +2,12 @@
 
 #include <directxmath.h>
 
-#define MAX_LIGHT_SOURCES 10  // Additional - fix constant in shaders
+#include "constants.h"
 
 using namespace DirectX;
 
+
+// common buffers structures
 struct WorldMatrixBuffer {
   XMMATRIX worldMatrix;
   XMFLOAT4 color;
@@ -13,6 +15,23 @@ struct WorldMatrixBuffer {
 
 struct SceneMatrixBuffer {
   XMMATRIX viewProjectionMatrix;
+};
+
+// Boxes buffers structures
+struct BoxSceneMatrixBuffer {
+  XMMATRIX viewProjectionMatrix;
+  XMINT4 indexBuffer[MAX_CUBES];
+};
+
+struct GeomBuffer {
+  XMMATRIX worldMatrix;
+  XMMATRIX norm;
+  XMFLOAT4 params;
+};
+
+struct BoxModel {
+  XMFLOAT4 pos;
+  XMFLOAT4 params;
 };
 
 struct TexVertex
@@ -23,8 +42,7 @@ struct TexVertex
   XMFLOAT3 tangent;   // tangent vec
 };
 
-struct LightableSceneMatrixBuffer {
-  XMMATRIX viewProjectionMatrix;
+struct LightableCB {
   XMFLOAT4 cameraPos;
   XMINT4 lightCount;
   XMFLOAT4 lightPos[MAX_LIGHT_SOURCES];
@@ -32,6 +50,7 @@ struct LightableSceneMatrixBuffer {
   XMFLOAT4 ambientColor;
 };
 
+// Plane special structure
 struct SimpleVertex
 {
   float x, y, z;      // positional coords

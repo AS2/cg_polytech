@@ -1,4 +1,4 @@
-#include "sceneConstantBuffer.h"
+#include "lightCB.h"
 
 float3 CalculateColor(in float3 objColor, in float3 objNormal, in float3 pos, in float shine, in bool trans)
 {

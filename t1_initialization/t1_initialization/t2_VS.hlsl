@@ -1,11 +1,4 @@
-#include "sceneConstantBuffer.h"
-
-// Independet constant buffers for world and view projection matrixes
-cbuffer WorldMatrixBuffer : register (b0)
-{
-  float4x4 worldMatrix;
-  float4 shine; // x - specular power
-};
+#include "boxCB.h"
 
 struct VS_INPUT
 {
@@ -13,6 +6,7 @@ struct VS_INPUT
   float2 uv : TEXCOORD;
   float3 normal : NORMAL;
   float3 tangent : TANGENT;
+  uint instanceId : SV_InstanceID;
 };
 
 struct PS_INPUT
@@ -22,16 +16,19 @@ struct PS_INPUT
   float2 uv : TEXCOORD;
   float3 normal : NORMAL;
   float3 tangent : TANGENT;
+  nointerpolation uint instanceId : INST_ID;
 };
 
 PS_INPUT main(VS_INPUT input) {
   PS_INPUT output;
+  unsigned int idx = indexBuffer[input.instanceId].x;
 
-  output.worldPos = mul(worldMatrix, float4(input.position, 1.0f));
+  output.worldPos = mul(geomBuffers[idx].worldMatrix, float4(input.position, 1.0f));
   output.position = mul(viewProjectionMatrix, output.worldPos);
-  output.normal = mul(worldMatrix, input.normal);
-  output.tangent = mul(worldMatrix, input.tangent);
+  output.normal = mul(geomBuffers[idx].norm, float4(input.normal, 0.0f)).xyz;
+  output.tangent = mul(geomBuffers[idx].norm, float4(input.tangent, 0.0f)).xyz;
   output.uv = input.uv;
+  output.instanceId = idx;
 
   return output;
 }

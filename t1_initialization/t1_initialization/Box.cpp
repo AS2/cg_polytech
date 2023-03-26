@@ -34,7 +34,24 @@ HRESULT Box::CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint,
   return S_OK;
 }
 
-HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screenWidth, int screenHeight, const MaterialParams& params) {
+HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screenWidth, int screenHeight, const MaterialParams &params, const std::vector<XMFLOAT4>& positions) {
+  assert(positions.size() == MAX_CUBES);
+
+  // Init frustum culling
+  frustum.Init(0.01f);
+
+  // Init cubes params
+  for (int i = 0; i < MAX_CUBES; i++) {
+    BoxModel tmp;
+    float textureIndex = (float)(rand() % params.diffPaths.size());
+    tmp.pos = positions[i];
+    tmp.params = XMFLOAT4(params.shines,
+      (float)(rand() % 10 - 5), 
+      textureIndex, 
+      textureIndex > 0.0f ? 0.0f : 1.0f);
+    boxesModelVector.push_back(tmp);
+  }
+  
   // Compile the vertex shader
   ID3DBlob* pVSBlob = nullptr;
   HRESULT hr = CompileShaderFromFile(L"t2_VS.hlsl", "main", "vs_5_0", &pVSBlob);
@@ -90,7 +107,9 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
     return hr;
 
   // Load texts
-  hr = material.Init(device, context, params);
+  boxesTextures = std::vector<Texture>(2);
+  hr = boxesTextures[0].InitArray(device, context, params.diffPaths);
+  hr = boxesTextures[1].Init(device, context, params.normalPath);
   if (FAILED(hr))
     return hr;
 
@@ -177,27 +196,34 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
 
   // Set constant buffers
   D3D11_BUFFER_DESC descWMB = {};
-  descWMB.ByteWidth = sizeof(WorldMatrixBuffer);
+  descWMB.ByteWidth = sizeof(GeomBuffer) * MAX_CUBES;
   descWMB.Usage = D3D11_USAGE_DEFAULT;
   descWMB.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
   descWMB.CPUAccessFlags = 0;
   descWMB.MiscFlags = 0;
   descWMB.StructureByteStride = 0;
 
-  WorldMatrixBuffer worldMatrixBuffer;
-  worldMatrixBuffer.worldMatrix = DirectX::XMMatrixIdentity();
+  GeomBuffer geomBufferInst[MAX_CUBES];
+  for (int i = 0; i < MAX_CUBES; i++) {
+    geomBufferInst[i].worldMatrix = XMMatrixTranslation(
+      boxesModelVector[i].pos.x, 
+      boxesModelVector[i].pos.y,
+      boxesModelVector[i].pos.z);
+    geomBufferInst[i].norm = geomBufferInst[i].worldMatrix;
+    geomBufferInst[i].params = boxesModelVector[i].params;
+  }
 
   D3D11_SUBRESOURCE_DATA data;
-  data.pSysMem = &worldMatrixBuffer;
-  data.SysMemPitch = sizeof(worldMatrixBuffer);
+  data.pSysMem = &geomBufferInst;
+  data.SysMemPitch = sizeof(geomBufferInst);
   data.SysMemSlicePitch = 0;
 
-  hr = device->CreateBuffer(&descWMB, &data, &g_pWorldMatrixBuffer);
+  hr = device->CreateBuffer(&descWMB, &data, &g_pGeomBuffer);
   if (FAILED(hr))
     return hr;
   
   D3D11_BUFFER_DESC descSMB = {};
-  descSMB.ByteWidth = sizeof(LightableSceneMatrixBuffer);
+  descSMB.ByteWidth = sizeof(BoxSceneMatrixBuffer);
   descSMB.Usage = D3D11_USAGE_DYNAMIC;
   descSMB.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
   descSMB.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -205,6 +231,18 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
   descSMB.StructureByteStride = 0;
 
   hr = device->CreateBuffer(&descSMB, nullptr, &g_pSceneMatrixBuffer);
+  if (FAILED(hr))
+    return hr;
+
+  D3D11_BUFFER_DESC descLCB = {};
+  descLCB.ByteWidth = sizeof(LightableCB);
+  descLCB.Usage = D3D11_USAGE_DYNAMIC;
+  descLCB.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+  descLCB.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+  descLCB.MiscFlags = 0;
+  descLCB.StructureByteStride = 0;
+
+  hr = device->CreateBuffer(&descLCB, nullptr, &g_LightConstantBuffer);
   if (FAILED(hr))
     return hr;
 
@@ -262,12 +300,16 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
 
 
 void Box::Realese() {
-  material.Realese();
+  for (auto& tex : boxesTextures)
+    tex.Release();
+
+  frustum.Realese();
 
   if (g_pSamplerState) g_pSamplerState->Release();
   if (g_pRasterizerState) g_pRasterizerState->Release();
 
-  if (g_pWorldMatrixBuffer) g_pWorldMatrixBuffer->Release();
+  if (g_pGeomBuffer) g_pGeomBuffer->Release();
+  if (g_LightConstantBuffer) g_LightConstantBuffer->Release();
 
   if (g_pDepthState) g_pDepthState->Release();
   if (g_pSceneMatrixBuffer) g_pSceneMatrixBuffer->Release();
@@ -286,7 +328,11 @@ void Box::Render(ID3D11DeviceContext* context) {
   ID3D11SamplerState* samplers[] = { g_pSamplerState };
   context->PSSetSamplers(0, 1, samplers);
 
-  material.AttachToShaders(context);
+  ID3D11ShaderResourceView* resources[] = { 
+    boxesTextures[0].GetTexture(), 
+    boxesTextures[1].GetTexture()
+  };
+  context->PSSetShaderResources(0, 2, resources);
   
   ID3D11Buffer* vertexBuffers[] = { g_pVertexBuffer };
   UINT strides[] = { sizeof(TexVertex) };
@@ -295,41 +341,86 @@ void Box::Render(ID3D11DeviceContext* context) {
   context->IASetVertexBuffers(0, 1, vertexBuffers, strides, offsets);
   context->IASetInputLayout(g_pVertexLayout);
   context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  
   context->VSSetShader(g_pVertexShader, nullptr, 0);
+  context->VSSetConstantBuffers(0, 1, &g_pGeomBuffer);
   context->VSSetConstantBuffers(1, 1, &g_pSceneMatrixBuffer);
+  
   context->PSSetShader(g_pPixelShader, nullptr, 0);
+  context->PSSetConstantBuffers(0, 1, &g_pGeomBuffer);
   context->PSSetConstantBuffers(1, 1, &g_pSceneMatrixBuffer);
+  context->PSSetConstantBuffers(2, 1, &g_LightConstantBuffer);
 
-  context->PSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer);
-  context->VSSetConstantBuffers(0, 1, &g_pWorldMatrixBuffer);
-  context->DrawIndexed(36, 0, 0);
+  context->DrawIndexedInstanced(36, (UINT)boxesIndexies.size(), 0, 0, 0);
 }
 
 
-bool Box::Frame(ID3D11DeviceContext* context, XMMATRIX& worldMatrix, XMMATRIX& viewMatrix, XMMATRIX& projectionMatrix, XMFLOAT3& cameraPos, std::vector<Light>& lights) {
-  // Update world matrix angle of first cube
-  WorldMatrixBuffer worldMatrixBuffer;
-  worldMatrixBuffer.worldMatrix = worldMatrix;
-  worldMatrixBuffer.color = XMFLOAT4(material.GetShines(), 0.0f, 0.0f, 0.0f); // its shine of boxes
-  context->UpdateSubresource(g_pWorldMatrixBuffer, 0, nullptr, &worldMatrixBuffer, 0, 0);
+bool Box::Frame(ID3D11DeviceContext* context, XMMATRIX& viewMatrix, XMMATRIX& projectionMatrix, XMFLOAT3& cameraPos, const Light& lights) {
+  // Update world matrix angle of all cubes
+  auto duration = Timer::GetInstance().Clock();
+  GeomBuffer geomBufferInst[MAX_CUBES];
+
+  for (int i = 0; i < MAX_CUBES; i++) {
+    geomBufferInst[i].worldMatrix = 
+      XMMatrixRotationY((float)duration * boxesModelVector[i].params.y * 0.5f) *
+      XMMatrixRotationZ((float)(sin(duration * boxesModelVector[i].params.y * 0.30) * 0.25f)) *
+      XMMatrixTranslation(0, (float)(sin(duration * boxesModelVector[i].params.y * 0.30) * 0.25f), 0) *
+      XMMatrixTranslation(boxesModelVector[i].pos.x, boxesModelVector[i].pos.y, boxesModelVector[i].pos.z);
+    geomBufferInst[i].norm = geomBufferInst[i].worldMatrix;
+    geomBufferInst[i].params = boxesModelVector[i].params;
+  }
+
+  context->UpdateSubresource(g_pGeomBuffer, 0, nullptr, &geomBufferInst, 0, 0);
+
+  // Calculate frustum
+  frustum.ConstructFrustum(viewMatrix, projectionMatrix);
+
+  // Find cubes in frustum
+  static const XMFLOAT4 AABB[] = {
+    {-0.5, -0.5, -0.5, 1.0},
+    {0.5,  0.5, 0.5, 1.0}
+  };
+
+  boxesIndexies.clear();
+  for (int i = 0; i < MAX_CUBES; i++) {
+    XMFLOAT4 min, max;
+    
+    XMStoreFloat4(&min, XMVector4Transform(XMLoadFloat4(&AABB[0]), geomBufferInst[i].worldMatrix));
+    XMStoreFloat4(&max, XMVector4Transform(XMLoadFloat4(&AABB[1]), geomBufferInst[i].worldMatrix));
+    
+    if (frustum.CheckRectangle(max.x, max.y, max.z, min.x, min.y, min.z))
+      boxesIndexies.push_back(i);
+  }
 
   // Get the view matrix
   D3D11_MAPPED_SUBRESOURCE subresource;
   HRESULT hr = context->Map(g_pSceneMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
   if (FAILED(hr))
     return FAILED(hr);
-
-  LightableSceneMatrixBuffer& sceneBuffer = *reinterpret_cast<LightableSceneMatrixBuffer*>(subresource.pData);
+  BoxSceneMatrixBuffer& sceneBuffer = *reinterpret_cast<BoxSceneMatrixBuffer*>(subresource.pData);
   sceneBuffer.viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
-  sceneBuffer.cameraPos = XMFLOAT4(cameraPos.x, cameraPos.y, cameraPos.z, 1.0f);
-  sceneBuffer.ambientColor = XMFLOAT4(0.6f, 0.6f, 0.3f, 1.0f);
-  sceneBuffer.lightCount = XMINT4((int32_t)lights.size(), 0, 0, 0);
-  for (int i = 0; i < lights.size(); i++) {
-    sceneBuffer.lightPos[i] = lights[i].GetPosition();
-    sceneBuffer.lightColor[i] = lights[i].GetColor();
+  for (int i = 0; i < boxesIndexies.size(); i++) {
+    sceneBuffer.indexBuffer[i] = XMINT4(boxesIndexies[i], 0, 0, 0);
   }
-
   context->Unmap(g_pSceneMatrixBuffer, 0);
+
+  // Update Light buffer
+  hr = context->Map(g_LightConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
+  if (FAILED(hr))
+    return FAILED(hr);
+
+  LightableCB& lightBuffer = *reinterpret_cast<LightableCB*>(subresource.pData);
+  lightBuffer.cameraPos = XMFLOAT4(cameraPos.x, cameraPos.y, cameraPos.z, 1.0f);
+  lightBuffer.ambientColor = XMFLOAT4(0.75f, 0.75f, 0.75f, 1.0f);
+  auto& lightColors = lights.GetColors();
+  auto& lightPos = lights.GetPositions();
+  lightBuffer.lightCount = XMINT4(int(lightColors.size()), 1, 0, 0);
+
+  for (int i = 0; i < lightColors.size(); i++) {
+    lightBuffer.lightPos[i] = XMFLOAT4(lightPos[i].x, lightPos[i].y, lightPos[i].z, 1.0f);
+    lightBuffer.lightColor[i] = XMFLOAT4(lightColors[i].x, lightColors[i].y, lightColors[i].z, 1.0f);
+  }
+  context->Unmap(g_LightConstantBuffer, 0);
 
   return S_OK;
 }

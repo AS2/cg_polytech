@@ -1,14 +1,4 @@
-// Independet constant buffers for world and view projection matrixes
-cbuffer WorldMatrixBuffer : register (b0)
-{
-  float4x4 worldMatrix;
-  float4 color;
-};
-
-cbuffer SceneMatrixBuffer : register (b1)
-{
-  float4x4 viewProjectionMatrix;
-};
+#include "transparentCB.h"
 
 struct VS_INPUT
 {
@@ -23,10 +13,10 @@ struct PS_INPUT {
 PS_INPUT main(VS_INPUT input) {
   PS_INPUT output;
 
-  output.position = mul(viewProjectionMatrix, 
-    mul(worldMatrix, input.position)
-  );
   output.worldPos = mul(worldMatrix, input.position);
+  output.position = mul(viewProjectionMatrix,
+    output.worldPos
+  );
 
   return output;
 }

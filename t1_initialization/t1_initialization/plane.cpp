@@ -160,7 +160,7 @@ HRESULT Plane::Init(ID3D11Device* device, ID3D11DeviceContext* context, int scre
   }
   
   D3D11_BUFFER_DESC descSMB = {};
-  descSMB.ByteWidth = sizeof(LightableSceneMatrixBuffer);
+  descSMB.ByteWidth = sizeof(SceneMatrixBuffer);
   descSMB.Usage = D3D11_USAGE_DYNAMIC;
   descSMB.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
   descSMB.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -168,6 +168,18 @@ HRESULT Plane::Init(ID3D11Device* device, ID3D11DeviceContext* context, int scre
   descSMB.StructureByteStride = 0;
 
   hr = device->CreateBuffer(&descSMB, nullptr, &g_pSceneMatrixBuffer);
+  if (FAILED(hr))
+    return hr;
+
+  D3D11_BUFFER_DESC descLCB = {};
+  descLCB.ByteWidth = sizeof(LightableCB);
+  descLCB.Usage = D3D11_USAGE_DYNAMIC;
+  descLCB.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+  descLCB.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+  descLCB.MiscFlags = 0;
+  descLCB.StructureByteStride = 0;
+
+  hr = device->CreateBuffer(&descLCB, nullptr, &g_LightConstantBuffer);
   if (FAILED(hr))
     return hr;
 
@@ -228,6 +240,7 @@ void Plane::Realese() {
     if (buffer)
       buffer->Release();
 
+  if (g_LightConstantBuffer) g_LightConstantBuffer->Release();
   if (g_pDepthState) g_pDepthState->Release();
   if (g_pSceneMatrixBuffer) g_pSceneMatrixBuffer->Release();
   if (g_pIndexBuffer) g_pIndexBuffer->Release();
@@ -277,7 +290,7 @@ float Plane::DistToPlane(XMMATRIX worldMatrix, XMFLOAT3 cameraPos) {
   return maxDist;
 }
 
-bool Plane::Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& worldMatricies, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos, std::vector<Light>& lights) {
+bool Plane::Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& worldMatricies, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT3 cameraPos, const Light& lights) {
   // Update world matricies
   WorldMatrixBuffer worldMatrixBuffer;
 
@@ -301,21 +314,29 @@ bool Plane::Frame(ID3D11DeviceContext* context, const std::vector<XMMATRIX>& wor
 
   // Get the view matrix
   D3D11_MAPPED_SUBRESOURCE subresource;
-  HRESULT hr = context->Map(g_pSceneMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
+  // Update Light buffer
+  HRESULT hr = context->Map(g_LightConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
   if (FAILED(hr))
     return FAILED(hr);
 
-  //
-  LightableSceneMatrixBuffer& sceneBuffer = *reinterpret_cast<LightableSceneMatrixBuffer*>(subresource.pData);
-  sceneBuffer.viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
-  sceneBuffer.cameraPos = XMFLOAT4(cameraPos.x, cameraPos.y, cameraPos.z, 1.0f);
-  sceneBuffer.ambientColor = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
-  sceneBuffer.lightCount = XMINT4((int32_t)lights.size(), 0, 0, 0);
-  for (int i = 0; i < lights.size(); i++) {
-    sceneBuffer.lightPos[i] = lights[i].GetPosition();
-    sceneBuffer.lightColor[i] = lights[i].GetColor();
-  }
+  LightableCB& lightBuffer = *reinterpret_cast<LightableCB*>(subresource.pData);
+  lightBuffer.cameraPos = XMFLOAT4(cameraPos.x, cameraPos.y, cameraPos.z, 1.0f);
+  lightBuffer.ambientColor = XMFLOAT4(0.75f, 0.75f, 0.75f, 1.0f);
+  auto& lightColors = lights.GetColors();
+  auto& lightPos = lights.GetPositions();
+  lightBuffer.lightCount = XMINT4(int(lightColors.size()), 0, 0, 0);
 
+  for (int i = 0; i < lightColors.size(); i++) {
+    lightBuffer.lightPos[i] = XMFLOAT4(lightPos[i].x, lightPos[i].y, lightPos[i].z, 1.0f);
+    lightBuffer.lightColor[i] = XMFLOAT4(lightColors[i].x, lightColors[i].y, lightColors[i].z, 1.0f);
+  }
+  context->Unmap(g_LightConstantBuffer, 0);
+
+  // Get the view matrix
+  hr = context->Map(g_pSceneMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &subresource);
+  if (FAILED(hr))
+    return FAILED(hr);
+  SceneMatrixBuffer& sceneBuffer = *reinterpret_cast<SceneMatrixBuffer*>(subresource.pData);
   sceneBuffer.viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
   context->Unmap(g_pSceneMatrixBuffer, 0);
 

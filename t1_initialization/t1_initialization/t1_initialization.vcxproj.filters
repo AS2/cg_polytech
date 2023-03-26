@@ -67,6 +67,18 @@
     <Filter Include="Materials\Textures\DDSTextureLoader">
       <UniqueIdentifier>{5487fb1c-0948-4f41-a019-f45a26738615}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Frustum">
+      <UniqueIdentifier>{e62779d0-0a02-4e53-a524-7e3b380d3c6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\renderTexture">
+      <UniqueIdentifier>{0ad27230-46a8-4e0b-8d7a-d89265d037b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Postprocessing">
+      <UniqueIdentifier>{c08728e9-0716-4ed6-830b-a8ee0aaec94e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Postprocessing">
+      <UniqueIdentifier>{74888425-04e7-4998-bf23-128e4f100889}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -103,8 +115,14 @@
     <ClCompile Include="light.cpp">
       <Filter>Scene\Light</Filter>
     </ClCompile>
-    <ClCompile Include="material.cpp">
-      <Filter>Materials</Filter>
+    <ClCompile Include="frustumCulling.cpp">
+      <Filter>Frustum</Filter>
+    </ClCompile>
+    <ClCompile Include="renderTexture.cpp">
+      <Filter>Renderer\renderTexture</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing.cpp">
+      <Filter>Renderer\Postprocessing</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -142,12 +160,6 @@
       <Filter>Scene\Box</Filter>
     </ClInclude>
     <ClInclude Include="def.h" />
-    <ClInclude Include="sceneConstantBuffer.h">
-      <Filter>Shaders</Filter>
-    </ClInclude>
-    <ClInclude Include="LightCalc.h">
-      <Filter>Shaders</Filter>
-    </ClInclude>
     <ClInclude Include="D3DInclude.h">
       <Filter>D3DInclude</Filter>
     </ClInclude>
@@ -156,6 +168,31 @@
     </ClInclude>
     <ClInclude Include="material.h">
       <Filter>Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="constants.h" />
+    <ClInclude Include="lightCalc.h">
+      <Filter>Shaders\Lights</Filter>
+    </ClInclude>
+    <ClInclude Include="lightCB.h">
+      <Filter>Shaders\Lights</Filter>
+    </ClInclude>
+    <ClInclude Include="frustumCulling.h">
+      <Filter>Frustum</Filter>
+    </ClInclude>
+    <ClInclude Include="boxCB.h">
+      <Filter>Shaders\Box</Filter>
+    </ClInclude>
+    <ClInclude Include="transparentCB.h">
+      <Filter>Shaders\Plane</Filter>
+    </ClInclude>
+    <ClInclude Include="lightSourcesCB.h">
+      <Filter>Shaders\Lights</Filter>
+    </ClInclude>
+    <ClInclude Include="renderTexture.h">
+      <Filter>Renderer\renderTexture</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing.h">
+      <Filter>Renderer\Postprocessing</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -182,6 +219,12 @@
     </FxCompile>
     <FxCompile Include="light_VS.hlsl">
       <Filter>Shaders\Lights</Filter>
+    </FxCompile>
+    <FxCompile Include="Postprocessing_VS.hlsl">
+      <Filter>Shaders\Postprocessing</Filter>
+    </FxCompile>
+    <FxCompile Include="Postprocessing_PS.hlsl">
+      <Filter>Shaders\Postprocessing</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
