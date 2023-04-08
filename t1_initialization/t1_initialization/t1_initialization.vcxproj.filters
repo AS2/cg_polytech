@@ -79,6 +79,9 @@
     <Filter Include="Renderer\Postprocessing">
       <UniqueIdentifier>{74888425-04e7-4998-bf23-128e4f100889}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Frustum">
+      <UniqueIdentifier>{6499ae6f-4163-475e-aadf-c1d0a08c61e2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -225,6 +228,9 @@
     </FxCompile>
     <FxCompile Include="Postprocessing_PS.hlsl">
       <Filter>Shaders\Postprocessing</Filter>
+    </FxCompile>
+    <FxCompile Include="FrustumCullingShader.hlsl">
+      <Filter>Shaders\Frustum</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

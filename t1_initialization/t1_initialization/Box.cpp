@@ -34,13 +34,44 @@ HRESULT Box::CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint,
   return S_OK;
 }
 
+void Box::ReadQueries(ID3D11DeviceContext* context) {
+  D3D11_QUERY_DATA_PIPELINE_STATISTICS stats;
+
+  while (lastCompletedFrame < curFrame) {
+    HRESULT hr = context->GetData(queries[lastCompletedFrame % MAX_QUERY], &stats, sizeof(D3D11_QUERY_DATA_PIPELINE_STATISTICS), 0);
+    if (hr == S_OK) {
+      cubesDrawedOnGPU = int(stats.IAPrimitives / 12);
+      lastCompletedFrame++;
+    }
+    else {
+      break;
+    }
+  }
+}
+
+HRESULT Box::InitQuery(ID3D11Device* device) {
+  HRESULT hr = S_OK;
+  D3D11_QUERY_DESC desc;
+
+  desc.Query = D3D11_QUERY_PIPELINE_STATISTICS;
+  desc.MiscFlags = 0;
+  for (int i = 0; i < MAX_QUERY && SUCCEEDED(hr); i++)
+    hr = device->CreateQuery(&desc, &queries[i]);
+
+  return hr;
+}
+
+
 HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screenWidth, int screenHeight, const MaterialParams &params, const std::vector<XMFLOAT4>& positions) {
   assert(positions.size() == MAX_CUBES);
+
+  InitQuery(device);
 
   // Init frustum culling
   frustum.Init(0.01f);
 
   // Init cubes params
+  boxesModelVector = std::vector<BoxModel>(MAX_CUBES);
   for (int i = 0; i < MAX_CUBES; i++) {
     BoxModel tmp;
     float textureIndex = (float)(rand() % params.diffPaths.size());
@@ -49,7 +80,7 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
       (float)(rand() % 10 - 5), 
       textureIndex, 
       textureIndex > 0.0f ? 0.0f : 1.0f);
-    boxesModelVector.push_back(tmp);
+    boxesModelVector[i] = tmp;
   }
   
   // Compile the vertex shader
@@ -103,6 +134,22 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
   // Create the pixel shader
   hr = device->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &g_pPixelShader);
   pPSBlob->Release();
+  if (FAILED(hr))
+    return hr;
+
+  // Compile the compute shader
+  ID3DBlob* pCSBlob = nullptr;
+  hr = CompileShaderFromFile(L"FrustumCullingShader.hlsl", "main", "cs_5_0", &pCSBlob);
+  if (FAILED(hr))
+  {
+    MessageBox(nullptr,
+      L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK);
+    return hr;
+  }
+
+  // Create the pixel shader
+  hr = device->CreateComputeShader(pCSBlob->GetBufferPointer(), pCSBlob->GetBufferSize(), nullptr, &g_pCullShader);
+  pCSBlob->Release();
   if (FAILED(hr))
     return hr;
 
@@ -203,7 +250,13 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
   descWMB.MiscFlags = 0;
   descWMB.StructureByteStride = 0;
 
+  // Find cubes in frustum
+  static const XMFLOAT4 AABB[] = {
+    {-0.5, -0.5, -0.5, 1.0},
+    {0.5,  0.5, 0.5, 1.0}
+  };
   GeomBuffer geomBufferInst[MAX_CUBES];
+  CullParams cullParams;
   for (int i = 0; i < MAX_CUBES; i++) {
     geomBufferInst[i].worldMatrix = XMMatrixTranslation(
       boxesModelVector[i].pos.x, 
@@ -211,7 +264,76 @@ HRESULT Box::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screen
       boxesModelVector[i].pos.z);
     geomBufferInst[i].norm = geomBufferInst[i].worldMatrix;
     geomBufferInst[i].params = boxesModelVector[i].params;
+
+    XMFLOAT4 min, max;
+    XMStoreFloat4(&min, XMVector4Transform(XMLoadFloat4(&AABB[0]), geomBufferInst[i].worldMatrix));
+    XMStoreFloat4(&max, XMVector4Transform(XMLoadFloat4(&AABB[1]), geomBufferInst[i].worldMatrix));
+    cullParams.bbMin[i] = min;
+    cullParams.bbMax[i] = max;
   }
+  cullParams.numShapes = XMINT4(int(boxesModelVector.size()), 0, 0, 0);
+
+  D3D11_SUBRESOURCE_DATA cullData;
+  cullData.pSysMem = &cullParams;
+  cullData.SysMemPitch = sizeof(cullParams);
+  cullData.SysMemSlicePitch = 0;
+  hr = device->CreateBuffer(&descWMB, &cullData, &g_pCullParams);
+  if (FAILED(hr))
+    return hr;
+
+  D3D11_BUFFER_DESC argSrcDesc = {};
+  argSrcDesc.ByteWidth = sizeof(D3D11_DRAW_INDEXED_INSTANCED_INDIRECT_ARGS);
+  argSrcDesc.Usage = D3D11_USAGE_DEFAULT;
+  argSrcDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
+  argSrcDesc.CPUAccessFlags = 0;
+  argSrcDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+  argSrcDesc.StructureByteStride = sizeof(UINT);
+
+  hr = device->CreateBuffer(&argSrcDesc, nullptr, &g_pInderectArgsSrc);
+  if (FAILED(hr))
+    return hr;
+  hr = device->CreateUnorderedAccessView(g_pInderectArgsSrc, nullptr, &g_pInderectArgsUAV);
+  if (FAILED(hr))
+    return hr;
+
+  D3D11_BUFFER_DESC argDesc = {};
+  argDesc.ByteWidth = sizeof(D3D11_DRAW_INDEXED_INSTANCED_INDIRECT_ARGS);
+  argDesc.Usage = D3D11_USAGE_DEFAULT;
+  argDesc.BindFlags = 0;
+  argDesc.CPUAccessFlags = 0;
+  argDesc.MiscFlags = D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS;
+  argDesc.StructureByteStride = 0;
+
+  hr = device->CreateBuffer(&argDesc, nullptr, &g_pInderectArgs);
+  if (FAILED(hr))
+    return hr;
+
+  D3D11_BUFFER_DESC gbDesc = {};
+  gbDesc.ByteWidth = sizeof(XMINT4) * MAX_CUBES;
+  gbDesc.Usage = D3D11_USAGE_DEFAULT;
+  gbDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
+  gbDesc.CPUAccessFlags = 0;
+  gbDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+  gbDesc.StructureByteStride = sizeof(XMINT4);
+
+  hr = device->CreateBuffer(&gbDesc, nullptr, &g_pGeomBufferInstVisGpu);
+  if (FAILED(hr))
+    return hr;
+  hr = device->CreateUnorderedAccessView(g_pGeomBufferInstVisGpu, nullptr, &g_pGeomBufferInstVisGpu_UAV);
+  if (FAILED(hr))
+    return hr;
+
+  D3D11_BUFFER_DESC gbDescGPU = {};
+  gbDescGPU.ByteWidth = sizeof(XMINT4) * MAX_CUBES;
+  gbDescGPU.Usage = D3D11_USAGE_DEFAULT;
+  gbDescGPU.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+  gbDescGPU.CPUAccessFlags = 0;
+  gbDescGPU.MiscFlags = 0;
+  gbDescGPU.StructureByteStride = 0;
+
+  hr = device->CreateBuffer(&gbDescGPU, nullptr, &g_pGeomBufferInstVis);
+  if (FAILED(hr))
+    return hr;
 
   D3D11_SUBRESOURCE_DATA data;
   data.pSysMem = &geomBufferInst;
@@ -318,6 +440,19 @@ void Box::Realese() {
   if (g_pVertexLayout) g_pVertexLayout->Release();
   if (g_pVertexShader) g_pVertexShader->Release();
   if (g_pPixelShader) g_pPixelShader->Release();
+
+  if (g_pInderectArgsSrc) g_pInderectArgsSrc->Release();
+  if (g_pInderectArgs) g_pInderectArgs->Release();
+  if (g_pGeomBufferInstVisGpu) g_pGeomBufferInstVisGpu->Release();
+  if (g_pGeomBufferInstVisGpu_UAV) g_pGeomBufferInstVisGpu_UAV->Release();
+  if (g_pGeomBufferInstVis) g_pGeomBufferInstVis->Release();
+  if (g_pInderectArgsUAV) g_pInderectArgsUAV->Release();
+  if (g_pCullShader) g_pCullShader->Release();
+  if (g_pCullParams) g_pCullParams->Release();
+
+  for (auto& q : queries) {
+    q->Release();
+  }
 }
 
 void Box::Render(ID3D11DeviceContext* context) {
@@ -345,17 +480,25 @@ void Box::Render(ID3D11DeviceContext* context) {
   context->VSSetShader(g_pVertexShader, nullptr, 0);
   context->VSSetConstantBuffers(0, 1, &g_pGeomBuffer);
   context->VSSetConstantBuffers(1, 1, &g_pSceneMatrixBuffer);
-  
+  context->VSSetConstantBuffers(2, 1, &g_pGeomBufferInstVis);
+
   context->PSSetShader(g_pPixelShader, nullptr, 0);
   context->PSSetConstantBuffers(0, 1, &g_pGeomBuffer);
   context->PSSetConstantBuffers(1, 1, &g_pSceneMatrixBuffer);
   context->PSSetConstantBuffers(2, 1, &g_LightConstantBuffer);
 
-  context->DrawIndexedInstanced(36, (UINT)boxesIndexies.size(), 0, 0, 0);
+  context->Begin(queries[curFrame % MAX_QUERY]);
+  context->DrawIndexedInstancedIndirect(g_pInderectArgs, 0);
+  context->End(queries[curFrame % MAX_QUERY]);
+  curFrame++;
+
+  ReadQueries(context);
 }
 
 
 bool Box::Frame(ID3D11DeviceContext* context, XMMATRIX& viewMatrix, XMMATRIX& projectionMatrix, XMFLOAT3& cameraPos, const Light& lights) {
+  CullParams cullParams;
+  
   // Update world matrix angle of all cubes
   auto duration = Timer::GetInstance().Clock();
   GeomBuffer geomBufferInst[MAX_CUBES];
@@ -375,7 +518,6 @@ bool Box::Frame(ID3D11DeviceContext* context, XMMATRIX& viewMatrix, XMMATRIX& pr
   // Calculate frustum
   frustum.ConstructFrustum(viewMatrix, projectionMatrix);
 
-  // Find cubes in frustum
   static const XMFLOAT4 AABB[] = {
     {-0.5, -0.5, -0.5, 1.0},
     {0.5,  0.5, 0.5, 1.0}
@@ -388,9 +530,15 @@ bool Box::Frame(ID3D11DeviceContext* context, XMMATRIX& viewMatrix, XMMATRIX& pr
     XMStoreFloat4(&min, XMVector4Transform(XMLoadFloat4(&AABB[0]), geomBufferInst[i].worldMatrix));
     XMStoreFloat4(&max, XMVector4Transform(XMLoadFloat4(&AABB[1]), geomBufferInst[i].worldMatrix));
     
-    if (frustum.CheckRectangle(max.x, max.y, max.z, min.x, min.y, min.z))
-      boxesIndexies.push_back(i);
+    //if (frustum.CheckRectangle(min, max))
+    boxesIndexies.push_back(i);
+
+    cullParams.bbMin[i] = min;
+    cullParams.bbMax[i] = max;
   }
+
+  cullParams.numShapes = XMINT4(MAX_CUBES, 0, 0, 0);
+  context->UpdateSubresource(g_pCullParams, 0, nullptr, &cullParams, 0, 0);
 
   // Get the view matrix
   D3D11_MAPPED_SUBRESOURCE subresource;
@@ -399,8 +547,9 @@ bool Box::Frame(ID3D11DeviceContext* context, XMMATRIX& viewMatrix, XMMATRIX& pr
     return FAILED(hr);
   BoxSceneMatrixBuffer& sceneBuffer = *reinterpret_cast<BoxSceneMatrixBuffer*>(subresource.pData);
   sceneBuffer.viewProjectionMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
-  for (int i = 0; i < boxesIndexies.size(); i++) {
-    sceneBuffer.indexBuffer[i] = XMINT4(boxesIndexies[i], 0, 0, 0);
+  XMFLOAT4* planes = frustum.GetPlanes();
+  for (int i = 0; i < 6; i++) {
+    sceneBuffer.planes[i] = planes[i];
   }
   context->Unmap(g_pSceneMatrixBuffer, 0);
 
@@ -421,6 +570,27 @@ bool Box::Frame(ID3D11DeviceContext* context, XMMATRIX& viewMatrix, XMMATRIX& pr
     lightBuffer.lightColor[i] = XMFLOAT4(lightColors[i].x, lightColors[i].y, lightColors[i].z, 1.0f);
   }
   context->Unmap(g_LightConstantBuffer, 0);
+
+
+  // GPU Culling
+  D3D11_DRAW_INDEXED_INSTANCED_INDIRECT_ARGS args;
+  args.IndexCountPerInstance = 36;
+  args.InstanceCount = 0;
+  args.StartInstanceLocation = 0;
+  args.BaseVertexLocation = 0;
+  args.StartIndexLocation = 0;
+  context->UpdateSubresource(g_pInderectArgsSrc, 0, nullptr, &args, 0, 0);
+  UINT groupNumber = MAX_CUBES / 64u + !!(MAX_CUBES % 64u);
+  context->CSSetConstantBuffers(0, 1, &g_pCullParams);
+  context->CSSetConstantBuffers(1, 1, &g_pSceneMatrixBuffer);
+  context->CSSetUnorderedAccessViews(0, 1, &g_pInderectArgsUAV, nullptr);
+  context->CSSetUnorderedAccessViews(1, 1, &g_pGeomBufferInstVisGpu_UAV, nullptr);
+  context->CSSetShader(g_pCullShader, nullptr, 0);
+  context->Dispatch(groupNumber, 1, 1);
+
+  context->CopyResource(g_pGeomBufferInstVis, g_pGeomBufferInstVisGpu);
+  context->CopyResource(g_pInderectArgs, g_pInderectArgsSrc);
+
 
   return S_OK;
 }

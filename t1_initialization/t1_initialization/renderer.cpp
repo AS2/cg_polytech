@@ -196,6 +196,8 @@ HRESULT Renderer::InitBackBuffer() {
 }
 
 HRESULT Renderer::Init(const HWND& g_hWnd, const HINSTANCE& g_hInstance, UINT screenWidth, UINT screenHeight) {
+  hWnd = &g_hWnd;
+
   HRESULT hr = input.InitInputs(g_hInstance, g_hWnd, screenWidth, screenHeight);
   if (FAILED(hr))
     return hr;
@@ -232,6 +234,10 @@ void Renderer::HandleInput() {
 
 // Update frame method
 bool Renderer::Frame() {
+  std::string name = "Culled (GPU): " + std::to_string(sc.GetName());
+  auto winName = LPCSTR(name.c_str());
+  SetWindowTextA(*hWnd, winName);
+
   postprocessing.Frame(g_pImmediateContext);
 
   // update inputs

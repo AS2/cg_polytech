@@ -16,5 +16,11 @@ cbuffer BoxGeomBuffers : register (b0)
 cbuffer SceneCB : register (b1)
 {
   float4x4 viewProjectionMatrix;
-  int4 indexBuffer[MAX_CUBES]; // x - index
+  float4 planes[6]; // x - index
 };
+
+cbuffer IndexBuffer : register(b2)
+{
+  uint4 objectID[MAX_CUBES];
+}
+

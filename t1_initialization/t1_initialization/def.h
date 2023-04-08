@@ -20,7 +20,13 @@ struct SceneMatrixBuffer {
 // Boxes buffers structures
 struct BoxSceneMatrixBuffer {
   XMMATRIX viewProjectionMatrix;
-  XMINT4 indexBuffer[MAX_CUBES];
+  XMFLOAT4 planes[6];
+};
+
+struct CullParams {
+  XMINT4 numShapes; // x - objects count;
+  XMFLOAT4 bbMin[MAX_CUBES];
+  XMFLOAT4 bbMax[MAX_CUBES];
 };
 
 struct GeomBuffer {
