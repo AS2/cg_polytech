@@ -22,94 +22,94 @@ void FrustumCulling::ConstructFrustum(XMMATRIX viewMatrix, XMMATRIX projectionMa
   XMStoreFloat4x4(&matrix, finalMatrix);
 
   // Calculate near plane of frustum.
-  planes[0][0] = matrix._14 + matrix._13;
-  planes[0][1] = matrix._24 + matrix._23;
-  planes[0][2] = matrix._34 + matrix._33;
-  planes[0][3] = matrix._44 + matrix._43;
+  planes[0].x = matrix._14 + matrix._13;
+  planes[0].y = matrix._24 + matrix._23;
+  planes[0].z = matrix._34 + matrix._33;
+  planes[0].w = matrix._44 + matrix._43;
 
   // Normalize the near plane.
-  float length = sqrtf((planes[0][0] * planes[0][0]) + (planes[0][1] * planes[0][1]) + (planes[0][2] * planes[0][2]));
-  planes[0][0] /= length;
-  planes[0][1] /= length;
-  planes[0][2] /= length;
-  planes[0][3] /= length;
+  float length = sqrtf((planes[0].x * planes[0].x) + (planes[0].y * planes[0].y) + (planes[0].z * planes[0].z));
+  planes[0].x /= length;
+  planes[0].y /= length;
+  planes[0].z /= length;
+  planes[0].w /= length;
 
   // Calculate far plane of frustum.
-  planes[1][0] = matrix._14 - matrix._13;
-  planes[1][1] = matrix._24 - matrix._23;
-  planes[1][2] = matrix._34 - matrix._33;
-  planes[1][3] = matrix._44 - matrix._43;
+  planes[1].x = matrix._14 - matrix._13;
+  planes[1].y = matrix._24 - matrix._23;
+  planes[1].z = matrix._34 - matrix._33;
+  planes[1].w = matrix._44 - matrix._43;
 
   // Normalize the far plane.
-  length = sqrtf((planes[1][0] * planes[1][0]) + (planes[1][1] * planes[1][1]) + (planes[1][2] * planes[1][2]));
-  planes[1][0] /= length;
-  planes[1][1] /= length;
-  planes[1][2] /= length;
-  planes[1][3] /= length;
+  length = sqrtf((planes[1].x * planes[1].x) + (planes[1].y * planes[1].y) + (planes[1].z * planes[1].z));
+  planes[1].x /= length;
+  planes[1].y /= length;
+  planes[1].z /= length;
+  planes[1].w /= length;
   
   // Calculate left plane of frustum.
-  planes[2][0] = matrix._14 + matrix._11;
-  planes[2][1] = matrix._24 + matrix._21;
-  planes[2][2] = matrix._34 + matrix._31;
-  planes[2][3] = matrix._44 + matrix._41;
+  planes[2].x = matrix._14 + matrix._11;
+  planes[2].y = matrix._24 + matrix._21;
+  planes[2].z = matrix._34 + matrix._31;
+  planes[2].w = matrix._44 + matrix._41;
 
   // Normalize the left plane.
-  length = sqrtf((planes[2][0] * planes[2][0]) + (planes[2][1] * planes[2][1]) + (planes[2][2] * planes[2][2]));
-  planes[2][0] /= length;
-  planes[2][1] /= length;
-  planes[2][2] /= length;
-  planes[2][3] /= length;
+  length = sqrtf((planes[2].x * planes[2].x) + (planes[2].y * planes[2].y) + (planes[2].z * planes[2].z));
+  planes[2].x /= length;
+  planes[2].y /= length;
+  planes[2].z /= length;
+  planes[2].w /= length;
 
   // Calculate right plane of frustum.
-  planes[3][0] = matrix._14 - matrix._11;
-  planes[3][1] = matrix._24 - matrix._21;
-  planes[3][2] = matrix._34 - matrix._31;
-  planes[3][3] = matrix._44 - matrix._41;
+  planes[3].x = matrix._14 - matrix._11;
+  planes[3].y = matrix._24 - matrix._21;
+  planes[3].z = matrix._34 - matrix._31;
+  planes[3].w = matrix._44 - matrix._41;
 
   // Normalize the right plane.
-  length = sqrtf((planes[3][0] * planes[3][0]) + (planes[3][1] * planes[3][1]) + (planes[3][2] * planes[3][2]));
-  planes[3][0] /= length;
-  planes[3][1] /= length;
-  planes[3][2] /= length;
-  planes[3][3] /= length;
+  length = sqrtf((planes[3].x * planes[3].x) + (planes[3].y * planes[3].y) + (planes[3].z * planes[3].z));
+  planes[3].x /= length;
+  planes[3].y /= length;
+  planes[3].z /= length;
+  planes[3].w /= length;
 
   // Calculate top plane of frustum.
-  planes[4][0] = matrix._14 - matrix._12;
-  planes[4][1] = matrix._24 - matrix._22;
-  planes[4][2] = matrix._34 - matrix._32;
-  planes[4][3] = matrix._44 - matrix._42;
+  planes[4].x = matrix._14 - matrix._12;
+  planes[4].y = matrix._24 - matrix._22;
+  planes[4].z = matrix._34 - matrix._32;
+  planes[4].w = matrix._44 - matrix._42;
 
   // Normalize the top plane.
-  length = sqrtf((planes[4][0] * planes[4][0]) + (planes[4][1] * planes[4][1]) + (planes[4][2] * planes[4][2]));
-  planes[4][0] /= length;
-  planes[4][1] /= length;
-  planes[4][2] /= length;
-  planes[4][3] /= length;
+  length = sqrtf((planes[4].x * planes[4].x) + (planes[4].y * planes[4].y) + (planes[4].z * planes[4].z));
+  planes[4].x /= length;
+  planes[4].y /= length;
+  planes[4].z /= length;
+  planes[4].w /= length;
 
   // Calculate bottom plane of frustum.
-  planes[5][0] = matrix._14 + matrix._12;
-  planes[5][1] = matrix._24 + matrix._22;
-  planes[5][2] = matrix._34 + matrix._32;
-  planes[5][3] = matrix._44 + matrix._42;
+  planes[5].x = matrix._14 + matrix._12;
+  planes[5].y = matrix._24 + matrix._22;
+  planes[5].z = matrix._34 + matrix._32;
+  planes[5].w = matrix._44 + matrix._42;
 
   // Normalize the bottom plane.
-  length = sqrtf((planes[5][0] * planes[5][0]) + (planes[5][1] * planes[5][1]) + (planes[5][2] * planes[5][2]));
-  planes[5][0] /= length;
-  planes[5][1] /= length;
-  planes[5][2] /= length;
-  planes[5][3] /= length;
+  length = sqrtf((planes[5].x * planes[5].x) + (planes[5].y * planes[5].y) + (planes[5].z * planes[5].z));
+  planes[5].x /= length;
+  planes[5].y /= length;
+  planes[5].z /= length;
+  planes[5].w /= length;
 }
 
-bool FrustumCulling::CheckRectangle(float maxWidth, float maxHeight, float maxDepth, float minWidth, float minHeight, float minDepth) {
+bool FrustumCulling::CheckRectangle(XMFLOAT4 bbMin, XMFLOAT4 bbMax) {
   for (int i = 0; i < 6; i++) {
-    if (((planes[i][0] * minWidth) + (planes[i][1] * minHeight) + (planes[i][2] * minDepth) + (planes[i][3] * 1.0f)) >= 0.0f ||
-      ((planes[i][0] * maxWidth) + (planes[i][1] * minHeight) + (planes[i][2] * minDepth) + (planes[i][3] * 1.0f)) >= 0.0f ||
-      ((planes[i][0] * minWidth) + (planes[i][1] * maxHeight) + (planes[i][2] * minDepth) + (planes[i][3] * 1.0f)) >= 0.0f ||
-      ((planes[i][0] * maxWidth) + (planes[i][1] * maxHeight) + (planes[i][2] * minDepth) + (planes[i][3] * 1.0f)) >= 0.0f ||
-      ((planes[i][0] * minWidth) + (planes[i][1] * minHeight) + (planes[i][2] * maxDepth) + (planes[i][3] * 1.0f)) >= 0.0f ||
-      ((planes[i][0] * maxWidth) + (planes[i][1] * minHeight) + (planes[i][2] * maxDepth) + (planes[i][3] * 1.0f)) >= 0.0f ||
-      ((planes[i][0] * minWidth) + (planes[i][1] * maxHeight) + (planes[i][2] * maxDepth) + (planes[i][3] * 1.0f)) >= 0.0f ||
-      ((planes[i][0] * maxWidth) + (planes[i][1] * maxHeight) + (planes[i][2] * maxDepth) + (planes[i][3] * 1.0f)) >= 0.0f)
+    if (((planes[i].x * bbMin.x) + (planes[i].y * bbMin.y) + (planes[i].z * bbMin.z) + (planes[i].w * 1.0f)) >= 0.0f ||
+      ((planes[i].x * bbMax.x) + (planes[i].y * bbMin.y) + (planes[i].z * bbMin.z) + (planes[i].w * 1.0f)) >= 0.0f ||
+      ((planes[i].x * bbMin.x) + (planes[i].y * bbMax.y) + (planes[i].z * bbMin.z) + (planes[i].w * 1.0f)) >= 0.0f ||
+      ((planes[i].x * bbMax.x) + (planes[i].y * bbMax.y) + (planes[i].z * bbMin.z) + (planes[i].w * 1.0f)) >= 0.0f ||
+      ((planes[i].x * bbMin.x) + (planes[i].y * bbMin.y) + (planes[i].z * bbMax.z) + (planes[i].w * 1.0f)) >= 0.0f ||
+      ((planes[i].x * bbMax.x) + (planes[i].y * bbMin.y) + (planes[i].z * bbMax.z) + (planes[i].w * 1.0f)) >= 0.0f ||
+      ((planes[i].x * bbMin.x) + (planes[i].y * bbMax.y) + (planes[i].z * bbMax.z) + (planes[i].w * 1.0f)) >= 0.0f ||
+      ((planes[i].x * bbMax.x) + (planes[i].y * bbMax.y) + (planes[i].z * bbMax.z) + (planes[i].w * 1.0f)) >= 0.0f)
       continue;
     else
       return false;

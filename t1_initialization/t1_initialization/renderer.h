@@ -60,6 +60,9 @@ private:
   ID3D11Texture2D*        g_pDepthBuffer = nullptr;
   ID3D11DepthStencilView* g_pDepthBufferDSV = nullptr;
 
+  // other
+  const HWND* hWnd;
+
   // render postprocessing
   RenderTexture renderTexture;
   Postprocessing postprocessing;

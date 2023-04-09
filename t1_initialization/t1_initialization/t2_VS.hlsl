@@ -21,7 +21,7 @@ struct PS_INPUT
 
 PS_INPUT main(VS_INPUT input) {
   PS_INPUT output;
-  unsigned int idx = indexBuffer[input.instanceId].x;
+  unsigned int idx = objectID[input.instanceId].x;
 
   output.worldPos = mul(geomBuffers[idx].worldMatrix, float4(input.position, 1.0f));
   output.position = mul(viewProjectionMatrix, output.worldPos);

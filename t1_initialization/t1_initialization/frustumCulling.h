@@ -12,9 +12,10 @@ public:
 
   void ConstructFrustum(XMMATRIX viewMatrix, XMMATRIX projectionMatrix);
 
-  bool CheckRectangle(float maxWidth, float maxHeight, float maxDepth, float minWidth, float minHeight, float minDepth);
+  bool CheckRectangle(XMFLOAT4 bbMin, XMFLOAT4 bbMax);
 
+  XMFLOAT4* GetPlanes() { return planes; };
 private:
   float screenDepth;
-  float planes[6][4];
+  XMFLOAT4 planes[6];
 };
